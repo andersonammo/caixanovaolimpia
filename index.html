@@ -442,10 +442,6 @@
     // =========================================================================
     // FUNÇÕES DE COMUNICAÇÃO E UTILITÁRIOS
     // =========================================================================
-    function imprimirReciboA4(payload) {
-        console.log("Gerando recibo A4 para a venda:", payload.idVenda);
-    }
-
     async function enviarDadosServidor(payload) {
         let payloadGeral = JSON.parse(JSON.stringify(payload));
         if (payloadGeral.emitirNotaFiscal !== undefined) { 
@@ -481,6 +477,39 @@
         let str = String(val).replace(/[^0-9\,\.\-]/g, '').trim();
         if (str.includes(',')) { str = str.replace(/\./g, '').replace(',', '.'); }
         return parseFloat(str) || 0;
+    }
+
+    // =========================================================================
+    // NOVO SISTEMA DE IMPRESSÃO SILENCIOSA (SEM POP-UPS)
+    // =========================================================================
+    function imprimirHTMLSilencioso(conteudoHtml) {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+        
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(conteudoHtml);
+        doc.close();
+        
+        iframe.contentWindow.focus();
+        setTimeout(() => {
+            iframe.contentWindow.print();
+            setTimeout(() => { document.body.removeChild(iframe); }, 3000);
+        }, 500);
+    }
+
+    // Usado para forçar a abertura da aba do PDF da Focus, driblando o bloqueio
+    function abrirLinkNovaAbaForcado(url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     // =========================================================================
@@ -525,14 +554,9 @@
                     const cxData = await resCx.json();
                     cxUltimoFechamento = parseFloat(cxData.ultimoFechamento) || 0;
                     
-                    if (cxData.aberto) {
-                        cxSessao = cxData.idSessao;
-                        cxFundoInicial = parseFloat(cxData.valorInicial) || 0;
-                        document.getElementById('tela-loading').style.display = 'none';
-                    } else {
-                        document.getElementById('tela-loading').style.display = 'none';
-                        abrirModalCaixa('abertura');
-                    }
+                    // TRAVA DEFINITIVA: SEMPRE EXIGE ABERTURA, MESMO SE ESTIVER ABERTO LÁ ATRÁS
+                    document.getElementById('tela-loading').style.display = 'none';
+                    abrirModalCaixa('abertura');
                 } catch (e) {
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura'); 
@@ -577,7 +601,6 @@
             
             const usuarioLogado = document.getElementById('login-user').value;
             if (usuarioLogado) { sel.value = usuarioLogado; }
-            
         } catch (e) { console.error("Falha", e); }
     }
 
@@ -628,17 +651,11 @@
         const desc = document.getElementById('desc-op-caixa').value || "Não informada"; 
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         
-        if(!valor || valor <= 0) return alert("Insira um valor válido para prosseguir.");
+        if(isNaN(valor) || valor < 0) return alert("Insira um valor válido para prosseguir.");
 
         let btn = document.getElementById('btn-op-caixa'); 
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando..."; 
         btn.disabled = true;
-
-        // ABRE O POP-UP AQUI (Síncrono ao clique) para evitar o bloqueio do Nativefier!
-        let janelaRecibo = window.open('', '_blank');
-        if (janelaRecibo) {
-            janelaRecibo.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando comprovante...</h3>");
-        }
 
         try {
             if(tipoOperacaoAtual === 'abertura') {
@@ -647,10 +664,9 @@
                 const data = await res.json(); 
                 cxSessao = data.idSessao; 
                 cxFundoInicial = valor; 
-                imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador, janelaRecibo);
+                imprimirComprovanteSilencioso("ABERTURA DE CAIXA", valor, desc, operador);
             } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
                 if(!cxSessao) { 
-                    if(janelaRecibo) janelaRecibo.close();
                     alert("Sessão do caixa não identificada."); 
                     btn.innerHTML = "Confirmar Lançamento"; 
                     btn.disabled = false; 
@@ -659,11 +675,10 @@
                 const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; 
                 const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
                 await enviarDadosServidor(payloadDespesa); 
-                imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador, janelaRecibo);
+                imprimirComprovanteSilencioso(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
             }
             document.getElementById('modal-operacao-caixa').style.display = 'none';
         } catch(e) { 
-            if(janelaRecibo) janelaRecibo.close();
             alert("Erro de comunicação com o servidor."); 
         }
         btn.innerHTML = "Confirmar Lançamento"; 
@@ -804,16 +819,6 @@
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno..."; 
         btn.disabled = true;
 
-        // ABRE AS JANELAS AQUI (ANTES DO AWAIT) para driblar o bloqueador!
-        let janelaRelatorio = window.open('', '_blank');
-        if(janelaRelatorio) janelaRelatorio.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando Relatório Z...</h3>");
-        
-        let janelaVale = null;
-        if (quebra < 0) {
-            janelaVale = window.open('', '_blank');
-            if(janelaVale) janelaVale.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando Vale de Quebra...</h3>");
-        }
-
         const payload = {
             tipo: 'fechar_caixa', 
             idSessao: cxSessao,
@@ -829,10 +834,11 @@
 
         try {
             await enviarDadosServidor(payload);
-            imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAutorizador, janelaRelatorio);
+            imprimirRelatorioFechamentoPDFSilencioso(informado, esperado, quebra, operador, adminAutorizador);
             
+            // Impressão extra: O VALE do funcionário
             if (quebra < 0) {
-                imprimirValeFuncionario(quebra, operador, adminAutorizador, janelaVale);
+                setTimeout(() => { imprimirValeSilencioso(quebra, operador, adminAutorizador); }, 3000);
             }
             
             alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
@@ -840,8 +846,6 @@
             carrinho = []; 
             location.reload(); 
         } catch(e) { 
-            if(janelaRelatorio) janelaRelatorio.close();
-            if(janelaVale) janelaVale.close();
             alert("Erro ao fechar o caixa no servidor."); 
             btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; 
             btn.disabled = false; 
@@ -849,12 +853,9 @@
     }
 
     // =========================================================================
-    // FUNÇÕES DE IMPRESSÃO DE RELATÓRIO E VALE (CORRIGIDAS PARA NATIVEFIER)
+    // FUNÇÕES DE IMPRESSÃO (SILENCIOSAS VIA IFRAME)
     // =========================================================================
-    function imprimirValeFuncionario(quebra, operador, adminAuth, preJanela) {
-        const janela = preJanela || window.open('', '_blank');
-        if (!janela) { alert("Impressão do Vale bloqueada. Libere os pop-ups!"); return; }
-        
+    function imprimirValeSilencioso(quebra, operador, adminAuth) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         const valorFalta = Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2});
 
@@ -884,27 +885,17 @@
                 <p><strong>Operador(a):</strong> ${operador}</p>
                 <p><strong>Autorizador:</strong> ${adminAuth || 'Não informado'}</p>
             </div>
-            
             <div class="valor">R$ ${valorFalta}</div>
-            
             <p class="texto-termo">Reconheço a falta do valor especificado acima no fechamento do meu caixa, referente à data de ${dataAtual.split(' ')[0]}. Estou ciente de que este valor poderá ser descontado dos meus vencimentos, conforme as normas da empresa.</p>
-            
             <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Operador(a)</div>
             <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Gerente/Autorizador</div>
-            
-            <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
         
-        janela.document.open();
-        janela.document.write(templateHtml);
-        janela.document.close();
+        imprimirHTMLSilencioso(templateHtml);
     }
 
-    function imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAuth, preJanela) {
-        const janela = preJanela || window.open('', '_blank');
-        if (!janela) { alert("Impressão do Relatório bloqueada. Libere os pop-ups!"); return; }
-        
+    function imprimirRelatorioFechamentoPDFSilencioso(informado, esperado, quebra, operador, adminAuth) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
         let movHtml = "";
@@ -951,19 +942,13 @@
             <p style="text-align:center; font-weight:bold; margin-top:15px; border-bottom:1px dashed #000;">EXTRATO DE MOVIMENTAÇÃO</p>
             <table><thead><tr><th>Hora</th><th>Tipo</th><th>Desc.</th><th style="text-align:right;">Valor</th></tr></thead><tbody>${movHtml}</tbody></table>
             <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">Assinatura do Operador/Gerente</div>
-            <script>window.onload = function() { setTimeout(() => window.print(), 800); }<\/script>
         </body>
         </html>`;
         
-        janela.document.open();
-        janela.document.write(templateHtml); 
-        janela.document.close();
+        imprimirHTMLSilencioso(templateHtml);
     }
 
-    function imprimirComprovanteCaixa(tipo, valor, desc, operador, preJanela) {
-        const janela = preJanela || window.open('', '_blank');
-        if (!janela) { alert("Impressão do recibo bloqueada. Libere os pop-ups!"); return; }
-        
+    function imprimirComprovanteSilencioso(tipo, valor, desc, operador) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         
         const templateHtml = `
@@ -988,13 +973,10 @@
             <div class="info"><p><strong>Operação:</strong> ${tipo}</p><p><strong>Data/Hora:</strong> ${dataAtual}</p><p><strong>Operador:</strong> ${operador}</p><p><strong>Descrição:</strong> ${desc}</p></div>
             <div class="valor">R$ ${parseFloat(valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}</div>
             <div class="assinatura"><p style="margin-bottom: 30px;"></p>Assinatura do Operador/Gerente</div>
-            <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
         
-        janela.document.open();
-        janela.document.write(templateHtml); 
-        janela.document.close();
+        imprimirHTMLSilencioso(templateHtml);
     }
 
     // =========================================================================
@@ -1296,18 +1278,15 @@
             
             if(emitirNF) { 
                 if(dadosResposta.link_danfe) { 
-                    
                     let linkFinal = dadosResposta.link_danfe;
                     if (!linkFinal.startsWith("http")) {
-                        if (linkFinal.match(/^[0-9]{44}/)) {
-                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
-                        } else if (linkFinal.startsWith("/v2")) {
-                            linkFinal = "https://api.focusnfe.com.br" + linkFinal;
-                        }
+                        if (linkFinal.match(/^[0-9]{44}/)) { linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal; } 
+                        else if (linkFinal.startsWith("/v2")) { linkFinal = "https://api.focusnfe.com.br" + linkFinal; }
                     }
 
-                    alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); 
-                    window.open(linkFinal, '_blank'); 
+                    // Força abrir a aba da NFC-e driblando o bloqueador
+                    abrirLinkNovaAbaForcado(linkFinal);
+                    alert("Venda registrada e NFC-e gerada com sucesso!"); 
                     
                 } else if (dadosResposta.alerta_nfe) { 
                     alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
@@ -1414,9 +1393,6 @@
         } 
     }
 
-    // =========================================================================
-    // LISTAGEM DE NOTAS RECENTES E 2ª VIA
-    // =========================================================================
     async function abrirModalNFCe() { 
         document.getElementById('modal-nfce').style.display = 'flex'; 
         const tbody = document.querySelector('#tabela-nfce tbody'); 
@@ -1439,7 +1415,7 @@
                     <td>${v.id}</td>
                     <td>${v.cliente}</td>
                     <td style="font-weight:600; color:var(--green-text);">R$ ${parseFloat(v.valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>
-                    <td><span class="badge badge-nfce">Consultar</span></td>
+                    <td><span class="badge badge-nfce">Concluída</span></td>
                     <td><button onclick="reimprimirNFCe(event, '${v.id}')" style="background:var(--blue-header); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;"><i class="fas fa-print"></i> 2ª Via</button></td>
                 `;
                 tbody.appendChild(tr); 
@@ -1461,7 +1437,8 @@
             const dados = await res.json();
             
             if (dados.sucesso && dados.link) {
-                window.open(dados.link, '_blank');
+                // Força abrir a aba da NFC-e driblando o bloqueador
+                abrirLinkNovaAbaForcado(dados.link);
             } else {
                 alert("Não foi possível consultar a nota na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
             }

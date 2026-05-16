@@ -279,7 +279,7 @@
 <div id="modal-lista-produtos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-box" style="color: var(--blue-header);"></i> Lista de Produtos</h3><button onclick="document.getElementById('modal-lista-produtos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-produtos"><thead><tr><th>Nome do Produto</th><th>Valor (R$)</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-lista-clientes" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-id-card" style="color: var(--blue-header);"></i> Clientes Cadastrados</h3><button onclick="document.getElementById('modal-lista-clientes').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-clientes"><thead><tr><th>Nome</th><th>Telefone</th><th>CPF</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-lista-orcamentos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-calculator" style="color: var(--blue-header);"></i> Orçamentos Salvos</h3><button onclick="document.getElementById('modal-lista-orcamentos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-orcamentos"><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
-<div id="modal-nfce" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-invoice-dollar" style="color: var(--blue-header);"></i> Gestão de NFC-e</h3><button onclick="document.getElementById('modal-nfce').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-nfce"><thead><tr><th>Nº Venda</th><th>Cliente</th><th>Valor Total</th><th>Status SEFAZ</th><th>Ação</th></tr></thead><tbody><tr><td colspan="5" style="color: #888; padding: 20px; text-align: center;">Nenhuma nota fiscal pendente de transmissão.</td></tr></tbody></table></div></div>
+<div id="modal-nfce" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-invoice-dollar" style="color: var(--blue-header);"></i> Gestão de NFC-e</h3><button onclick="document.getElementById('modal-nfce').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-nfce"><thead><tr><th>Nº Venda</th><th>Cliente</th><th>Valor Total</th><th>Status SEFAZ</th><th>Ação</th></tr></thead><tbody><tr><td colspan="5" style="color: #888; padding: 20px; text-align: center;">Buscando vendas recentes... <i class='fas fa-spinner fa-spin'></i></td></tr></tbody></table></div></div>
 
 <div id="modal-auth-master" class="modal-overlay">
     <div class="modal-box-caixa" style="text-align: center;">
@@ -412,7 +412,7 @@
 </div>
 
 <script>
-    // =========================================================================
+     // =========================================================================
     // 1. DEFINA AQUI AS URLs DO SEU GOOGLE APPS SCRIPT (WEB APP)
     // =========================================================================
     const URL_BASE_1_GERAL = "https://script.google.com/macros/s/AKfycbzciM5IA25tZ9CcRkwj0-okP5CQ0IG3wpmZeT40vbPGiCtovD3au5Ccgr9jTxcJhSc6/exec";
@@ -530,7 +530,6 @@
                         cxFundoInicial = parseFloat(cxData.valorInicial) || 0;
                         document.getElementById('tela-loading').style.display = 'none';
                     } else {
-                        // Trava 1: Se não estiver aberto, trava na tela de abertura
                         document.getElementById('tela-loading').style.display = 'none';
                         abrirModalCaixa('abertura');
                     }
@@ -576,11 +575,8 @@
             sel.innerHTML = ""; 
             (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
             
-            // === SELECIONA O COLABORADOR LOGADO AUTOMATICAMENTE ===
             const usuarioLogado = document.getElementById('login-user').value;
-            if (usuarioLogado) { 
-                sel.value = usuarioLogado; 
-            }
+            if (usuarioLogado) { sel.value = usuarioLogado; }
             
         } catch (e) { console.error("Falha", e); }
     }
@@ -614,8 +610,6 @@
             lblFechamento.style.display = "block";
             lblFechamento.innerText = `Dinheiro deixado ontem: R$ ${cxUltimoFechamento.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; 
             document.getElementById('valor-op-caixa').value = cxUltimoFechamento.toFixed(2); 
-            
-            // Trava: Oculta o botão de cancelar
             btnCancelar.style.display = "none";
         } else if(tipo === 'sangria') {
             titulo.innerHTML = "<i class='fas fa-hand-holding-usd' style='color:var(--blue-header)'></i> Registrar Sangria"; 
@@ -640,6 +634,12 @@
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando..."; 
         btn.disabled = true;
 
+        // ABRE O POP-UP AQUI (Síncrono ao clique) para evitar o bloqueio do Nativefier!
+        let janelaRecibo = window.open('', '_blank');
+        if (janelaRecibo) {
+            janelaRecibo.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando comprovante...</h3>");
+        }
+
         try {
             if(tipoOperacaoAtual === 'abertura') {
                 const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor }; 
@@ -647,9 +647,10 @@
                 const data = await res.json(); 
                 cxSessao = data.idSessao; 
                 cxFundoInicial = valor; 
-                imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador);
+                imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador, janelaRecibo);
             } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
                 if(!cxSessao) { 
+                    if(janelaRecibo) janelaRecibo.close();
                     alert("Sessão do caixa não identificada."); 
                     btn.innerHTML = "Confirmar Lançamento"; 
                     btn.disabled = false; 
@@ -658,10 +659,11 @@
                 const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; 
                 const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
                 await enviarDadosServidor(payloadDespesa); 
-                imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
+                imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador, janelaRecibo);
             }
             document.getElementById('modal-operacao-caixa').style.display = 'none';
         } catch(e) { 
+            if(janelaRecibo) janelaRecibo.close();
             alert("Erro de comunicação com o servidor."); 
         }
         btn.innerHTML = "Confirmar Lançamento"; 
@@ -802,6 +804,16 @@
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno..."; 
         btn.disabled = true;
 
+        // ABRE AS JANELAS AQUI (ANTES DO AWAIT) para driblar o bloqueador!
+        let janelaRelatorio = window.open('', '_blank');
+        if(janelaRelatorio) janelaRelatorio.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando Relatório Z...</h3>");
+        
+        let janelaVale = null;
+        if (quebra < 0) {
+            janelaVale = window.open('', '_blank');
+            if(janelaVale) janelaVale.document.write("<h3 style='font-family:sans-serif; text-align:center; margin-top:50px;'>Gerando Vale de Quebra...</h3>");
+        }
+
         const payload = {
             tipo: 'fechar_caixa', 
             idSessao: cxSessao,
@@ -817,20 +829,19 @@
 
         try {
             await enviarDadosServidor(payload);
-            imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAutorizador);
+            imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAutorizador, janelaRelatorio);
             
-            // Impressão extra: O VALE do funcionário
             if (quebra < 0) {
-                setTimeout(() => { imprimirValeFuncionario(quebra, operador, adminAutorizador); }, 800);
+                imprimirValeFuncionario(quebra, operador, adminAutorizador, janelaVale);
             }
             
             alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
-            
-            // Trava 2: Zera o caixa localmente e recarrega para forçar nova abertura
             cxSessao = ""; 
             carrinho = []; 
             location.reload(); 
         } catch(e) { 
+            if(janelaRelatorio) janelaRelatorio.close();
+            if(janelaVale) janelaVale.close();
             alert("Erro ao fechar o caixa no servidor."); 
             btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; 
             btn.disabled = false; 
@@ -838,10 +849,12 @@
     }
 
     // =========================================================================
-    // FUNÇÕES DE IMPRESSÃO DE RELATÓRIO E VALE
+    // FUNÇÕES DE IMPRESSÃO DE RELATÓRIO E VALE (CORRIGIDAS PARA NATIVEFIER)
     // =========================================================================
-    function imprimirValeFuncionario(quebra, operador, adminAuth) {
-        const janela = window.open('', '_blank');
+    function imprimirValeFuncionario(quebra, operador, adminAuth, preJanela) {
+        const janela = preJanela || window.open('', '_blank');
+        if (!janela) { alert("Impressão do Vale bloqueada. Libere os pop-ups!"); return; }
+        
         const dataAtual = new Date().toLocaleString('pt-BR');
         const valorFalta = Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2});
 
@@ -882,12 +895,16 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
+        
+        janela.document.open();
         janela.document.write(templateHtml);
         janela.document.close();
     }
 
-    function imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAuth) {
-        const janela = window.open('', '_blank');
+    function imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAuth, preJanela) {
+        const janela = preJanela || window.open('', '_blank');
+        if (!janela) { alert("Impressão do Relatório bloqueada. Libere os pop-ups!"); return; }
+        
         const dataAtual = new Date().toLocaleString('pt-BR');
         const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
         let movHtml = "";
@@ -937,12 +954,16 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 800); }<\/script>
         </body>
         </html>`;
+        
+        janela.document.open();
         janela.document.write(templateHtml); 
         janela.document.close();
     }
 
-    function imprimirComprovanteCaixa(tipo, valor, desc, operador) {
-        const janela = window.open('', '_blank');
+    function imprimirComprovanteCaixa(tipo, valor, desc, operador, preJanela) {
+        const janela = preJanela || window.open('', '_blank');
+        if (!janela) { alert("Impressão do recibo bloqueada. Libere os pop-ups!"); return; }
+        
         const dataAtual = new Date().toLocaleString('pt-BR');
         
         const templateHtml = `
@@ -970,12 +991,14 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
+        
+        janela.document.open();
         janela.document.write(templateHtml); 
         janela.document.close();
     }
 
     // =========================================================================
-    // FUNÇÕES DO PDV E CARRINHO (COM TRAVAS DE CAIXA FECHADO)
+    // FUNÇÕES DO PDV E CARRINHO
     // =========================================================================
     function recarregarParametros() { 
         document.getElementById('tela-loading').style.display = 'flex'; 
@@ -1273,8 +1296,19 @@
             
             if(emitirNF) { 
                 if(dadosResposta.link_danfe) { 
-                    alert("Venda registrada e NFC-e gerada! A nota será aberta na tela."); 
-                    window.open(dadosResposta.link_danfe, '_blank'); 
+                    
+                    let linkFinal = dadosResposta.link_danfe;
+                    if (!linkFinal.startsWith("http")) {
+                        if (linkFinal.match(/^[0-9]{44}/)) {
+                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
+                        } else if (linkFinal.startsWith("/v2")) {
+                            linkFinal = "https://api.focusnfe.com.br" + linkFinal;
+                        }
+                    }
+
+                    alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); 
+                    window.open(linkFinal, '_blank'); 
+                    
                 } else if (dadosResposta.alerta_nfe) { 
                     alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
                 } else { 
@@ -1380,7 +1414,10 @@
         } 
     }
 
-   async function abrirModalNFCe() { 
+    // =========================================================================
+    // LISTAGEM DE NOTAS RECENTES E 2ª VIA
+    // =========================================================================
+    async function abrirModalNFCe() { 
         document.getElementById('modal-nfce').style.display = 'flex'; 
         const tbody = document.querySelector('#tabela-nfce tbody'); 
         tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando vendas recentes... <i class='fas fa-spinner fa-spin'></i></td></tr>"; 
@@ -1402,20 +1439,20 @@
                     <td>${v.id}</td>
                     <td>${v.cliente}</td>
                     <td style="font-weight:600; color:var(--green-text);">R$ ${parseFloat(v.valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>
-                    <td><span class="badge badge-nfce">Concluída</span></td>
+                    <td><span class="badge badge-nfce">Consultar</span></td>
                     <td><button onclick="reimprimirNFCe(event, '${v.id}')" style="background:var(--blue-header); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;"><i class="fas fa-print"></i> 2ª Via</button></td>
                 `;
                 tbody.appendChild(tr); 
             }); 
         } catch (e) { 
-            tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao buscar notas.</td></tr>"; 
+            tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao buscar notas do servidor.</td></tr>"; 
         } 
     }
 
     async function reimprimirNFCe(event, idVenda) {
         const btn = event.currentTarget;
         const textoOriginal = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>";
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Aguarde";
         btn.disabled = true;
 
         try {
@@ -1426,7 +1463,7 @@
             if (dados.sucesso && dados.link) {
                 window.open(dados.link, '_blank');
             } else {
-                alert("Não foi possível consultar a 2ª via na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
+                alert("Não foi possível consultar a nota na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
             }
         } catch(e) {
             alert("Erro ao conectar com o servidor.");

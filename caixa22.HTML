@@ -421,9 +421,9 @@
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
     // Defina as senhas e quem é o dono de cada senha.
     const SENHAS_MASTER = {
-         "financeiro2026": "GUSTAVO", 
-        "bino2026": "WEVERTON",
-        "174639": "ANDERSON"
+        "174639": "ANDERSON",
+        "bino2026": "WEVERTON", 
+        "financeiro2026": "GUSTAVO"
     }; 
     
     let adminAutorizador = ""; 
@@ -578,7 +578,9 @@
             
             // === SELECIONA O COLABORADOR LOGADO AUTOMATICAMENTE ===
             const usuarioLogado = document.getElementById('login-user').value;
-            if (usuarioLogado) { sel.value = usuarioLogado; }
+            if (usuarioLogado) { 
+                sel.value = usuarioLogado; 
+            }
             
         } catch (e) { console.error("Falha", e); }
     }
@@ -1271,24 +1273,8 @@
             
             if(emitirNF) { 
                 if(dadosResposta.link_danfe) { 
-                    
-                    let linkFinal = dadosResposta.link_danfe;
-                    
-                    // CORREÇÃO MÁGICA NO FRONTEND PARA O LINK DA FOCUS NFE
-                    if (!linkFinal.startsWith("http")) {
-                        if (linkFinal.startsWith("/v2")) {
-                            linkFinal = "https://api.focusnfe.com.br" + linkFinal;
-                        } else if (linkFinal.match(/^[0-9]{44}/)) {
-                            // Se vier só a chave (44 numeros)
-                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
-                        } else {
-                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
-                        }
-                    }
-
-                    alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); 
-                    window.open(linkFinal, '_blank'); 
-                    
+                    alert("Venda registrada e NFC-e gerada! A nota será aberta na tela."); 
+                    window.open(dadosResposta.link_danfe, '_blank'); 
                 } else if (dadosResposta.alerta_nfe) { 
                     alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
                 } else { 
@@ -1394,8 +1380,60 @@
         } 
     }
 
-    function abrirModalNFCe() { 
+   async function abrirModalNFCe() { 
         document.getElementById('modal-nfce').style.display = 'flex'; 
+        const tbody = document.querySelector('#tabela-nfce tbody'); 
+        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando vendas recentes... <i class='fas fa-spinner fa-spin'></i></td></tr>"; 
+        
+        try { 
+            const payload = { tipo: 'listar_vendas_recentes' };
+            const res = await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const dados = await res.json(); 
+            tbody.innerHTML = ""; 
+            
+            if(!dados.vendas || dados.vendas.length === 0) { 
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Nenhuma venda encontrada.</td></tr>"; 
+                return; 
+            } 
+            
+            dados.vendas.forEach(v => { 
+                const tr = document.createElement('tr'); 
+                tr.innerHTML = `
+                    <td>${v.id}</td>
+                    <td>${v.cliente}</td>
+                    <td style="font-weight:600; color:var(--green-text);">R$ ${parseFloat(v.valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>
+                    <td><span class="badge badge-nfce">Concluída</span></td>
+                    <td><button onclick="reimprimirNFCe(event, '${v.id}')" style="background:var(--blue-header); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;"><i class="fas fa-print"></i> 2ª Via</button></td>
+                `;
+                tbody.appendChild(tr); 
+            }); 
+        } catch (e) { 
+            tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao buscar notas.</td></tr>"; 
+        } 
+    }
+
+    async function reimprimirNFCe(event, idVenda) {
+        const btn = event.currentTarget;
+        const textoOriginal = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>";
+        btn.disabled = true;
+
+        try {
+            const payload = { tipo: "reimprimir_nfce", idVenda: idVenda };
+            const res = await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payload) });
+            const dados = await res.json();
+            
+            if (dados.sucesso && dados.link) {
+                window.open(dados.link, '_blank');
+            } else {
+                alert("Não foi possível consultar a 2ª via na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
+            }
+        } catch(e) {
+            alert("Erro ao conectar com o servidor.");
+        }
+        
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
     }
 </script>
 </body>

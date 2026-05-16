@@ -421,7 +421,7 @@
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
     // Defina as senhas e quem é o dono de cada senha.
     const SENHAS_MASTER = {
-       "financeiro2026": "GUSTAVO", 
+         "financeiro2026": "GUSTAVO", 
         "bino2026": "WEVERTON",
         "174639": "ANDERSON"
     }; 
@@ -1271,8 +1271,24 @@
             
             if(emitirNF) { 
                 if(dadosResposta.link_danfe) { 
+                    
+                    let linkFinal = dadosResposta.link_danfe;
+                    
+                    // CORREÇÃO MÁGICA NO FRONTEND PARA O LINK DA FOCUS NFE
+                    if (!linkFinal.startsWith("http")) {
+                        if (linkFinal.startsWith("/v2")) {
+                            linkFinal = "https://api.focusnfe.com.br" + linkFinal;
+                        } else if (linkFinal.match(/^[0-9]{44}/)) {
+                            // Se vier só a chave (44 numeros)
+                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
+                        } else {
+                            linkFinal = "https://api.focusnfe.com.br/v2/nfce/" + linkFinal;
+                        }
+                    }
+
                     alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); 
-                    window.open(dadosResposta.link_danfe, '_blank'); 
+                    window.open(linkFinal, '_blank'); 
+                    
                 } else if (dadosResposta.alerta_nfe) { 
                     alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
                 } else { 

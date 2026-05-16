@@ -424,7 +424,6 @@
     const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbyRnFjzeYrGvweXMaLABVnWOgL4DHi5AMzBpsvrnVyxVB1dWmwvZZoQ5WuZblzzGx3B-w/exec";
 
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
-    // Defina as senhas e quem é o dono de cada senha.
     const SENHAS_MASTER = {
         "admin123": "Diretoria", 
         "gerente123": "Gerência"
@@ -438,29 +437,44 @@
     let produtosLista = [];
     let carrinho = [];
     let tipoOperacaoAtual = "";
-    
     let cxSessao = "";
     let cxFundoInicial = 0;
     let cxUltimoFechamento = 0;
     let cxResumoAtual = null;
 
     // =========================================================================
-    // 2. FUNÇÃO DE IMPRESSÃO (Evita o travamento ao finalizar venda)
+    // FUNÇÕES DE COMUNICAÇÃO E UTILITÁRIOS
     // =========================================================================
-    function imprimirReciboA4(payload) { console.log("Gerando recibo A4 para a venda:", payload.idVenda); }
+    function imprimirReciboA4(payload) {
+        console.log("Gerando recibo A4 para a venda:", payload.idVenda);
+    }
 
     async function enviarDadosServidor(payload) {
         let payloadGeral = JSON.parse(JSON.stringify(payload));
-        if (payloadGeral.emitirNotaFiscal !== undefined) { payloadGeral.emitirNotaFiscal = false; }
-        fetch(URL_BASE_1_GERAL, { method: 'POST', body: JSON.stringify(payloadGeral) }).catch(e => console.error("Falha ao salvar no Servidor Geral", e));
-        return await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payload) });
+        if (payloadGeral.emitirNotaFiscal !== undefined) { 
+            payloadGeral.emitirNotaFiscal = false; 
+        }
+        fetch(URL_BASE_1_GERAL, { 
+            method: 'POST', 
+            body: JSON.stringify(payloadGeral) 
+        }).catch(e => console.error("Falha ao salvar no Servidor Geral", e));
+        
+        return await fetch(URL_BASE_2_PRINCIPAL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload) 
+        });
     }
 
-    function toggleMenuCaixa() { document.getElementById("dropdown-caixa").classList.toggle("show-dropdown"); }
+    function toggleMenuCaixa() { 
+        document.getElementById("dropdown-caixa").classList.toggle("show-dropdown"); 
+    }
+    
     window.onclick = function(e) {
         if (!e.target.matches('.menu-hamburguer')) {
             var ds = document.getElementsByClassName("dropdown-content");
-            for (var i = 0; i < ds.length; i++) { if (ds[i].classList.contains('show-dropdown')) ds[i].classList.remove('show-dropdown'); }
+            for (var i = 0; i < ds.length; i++) { 
+                if (ds[i].classList.contains('show-dropdown')) ds[i].classList.remove('show-dropdown'); 
+            }
         }
     }
 
@@ -472,6 +486,9 @@
         return parseFloat(str) || 0;
     }
 
+    // =========================================================================
+    // SISTEMA DE LOGIN E ABERTURA OBRIGATÓRIA
+    // =========================================================================
     async function entrarSistema() {
         const user = document.getElementById('login-user').value.trim().toLowerCase();
         const pass = document.getElementById('login-pass').value.trim();
@@ -479,8 +496,10 @@
         const btn = document.querySelector('.login-box button');
         
         if (!user || !pass) { mostrarErroLogin("Preencha todos os campos!"); return; }
+        
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Autenticando...";
-        btn.disabled = true; msgErro.style.display = 'none';
+        btn.disabled = true; 
+        msgErro.style.display = 'none';
 
         try {
             const payloadNovo = { acao: 'login', usuario: user, senha: pass };
@@ -514,6 +533,7 @@
                         cxFundoInicial = parseFloat(cxData.valorInicial) || 0;
                         document.getElementById('tela-loading').style.display = 'none';
                     } else {
+                        // Trava 1: Se não estiver aberto, trava na tela de abertura
                         document.getElementById('tela-loading').style.display = 'none';
                         abrirModalCaixa('abertura');
                     }
@@ -521,70 +541,155 @@
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura'); 
                 }
-            } else { mostrarErroLogin(dataLogin.mensagem || "Credenciais inválidas!"); }
-        } catch (error) { mostrarErroLogin("Erro de conexão."); } 
-        finally { btn.innerHTML = "Entrar no Terminal"; btn.disabled = false; }
+            } else {
+                mostrarErroLogin(dataLogin.mensagem || "Credenciais inválidas!");
+            }
+        } catch (error) { 
+            mostrarErroLogin("Erro de conexão."); 
+        } finally { 
+            btn.innerHTML = "Entrar no Terminal"; 
+            btn.disabled = false; 
+        }
     }
 
     function mostrarErroLogin(msg) {
-        const msgErro = document.getElementById('login-erro'); msgErro.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`; msgErro.style.display = 'block';
-        const box = document.querySelector('.login-box'); box.style.transform = 'translateX(-10px)'; setTimeout(() => box.style.transform = 'translateX(10px)', 100); setTimeout(() => box.style.transform = 'translateX(0)', 200);
+        const msgErro = document.getElementById('login-erro'); 
+        msgErro.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`; 
+        msgErro.style.display = 'block';
+        const box = document.querySelector('.login-box'); 
+        box.style.transform = 'translateX(-10px)'; 
+        setTimeout(() => box.style.transform = 'translateX(10px)', 100); 
+        setTimeout(() => box.style.transform = 'translateX(0)', 200);
     }
-    document.getElementById("login-pass").addEventListener("keypress", function(e) { if(e.key === "Enter") entrarSistema(); });
+    
+    document.getElementById("login-pass").addEventListener("keypress", function(e) { 
+        if(e.key === "Enter") entrarSistema(); 
+    });
 
     async function carregarDados() {
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?nocache=${Date.now()}`); const data = await res.json();
-            produtosLista = data.produtos || []; const dl = document.getElementById('lista-produtos'); dl.innerHTML = ""; produtosLista.forEach(p => dl.innerHTML += `<option value="${p.nome}">`);
-            const sel = document.getElementById('vendedor-select'); sel.innerHTML = ""; (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?nocache=${Date.now()}`); 
+            const data = await res.json();
+            produtosLista = data.produtos || []; 
+            const dl = document.getElementById('lista-produtos'); 
+            dl.innerHTML = ""; 
+            produtosLista.forEach(p => dl.innerHTML += `<option value="${p.nome}">`);
+            
+            const sel = document.getElementById('vendedor-select'); 
+            sel.innerHTML = ""; 
+            (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
         } catch (e) { console.error("Falha", e); }
     }
 
+    // =========================================================================
+    // FUNÇÕES DO CAIXA E VALIDAÇÃO MASTER
+    // =========================================================================
     function abrirModalCaixa(tipo) {
-        if (tipo !== 'abertura' && !cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); tipo = 'abertura'; }
-        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); tipoOperacaoAtual = tipo;
-        const modal = document.getElementById('modal-operacao-caixa'); const titulo = document.getElementById('titulo-op-caixa'); const desc = document.getElementById('desc-op-caixa'); const lblFechamento = document.getElementById('lbl-fechamento-anterior'); const btnCancelar = document.getElementById('btn-cancelar-op'); 
-        document.getElementById('valor-op-caixa').value = ""; desc.value = ""; desc.style.display = "block"; lblFechamento.style.display = "none";
+        if (tipo !== 'abertura' && !cxSessao) { 
+            alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); 
+            tipo = 'abertura'; 
+        }
+
+        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); 
+        tipoOperacaoAtual = tipo;
+        const modal = document.getElementById('modal-operacao-caixa'); 
+        const titulo = document.getElementById('titulo-op-caixa'); 
+        const desc = document.getElementById('desc-op-caixa'); 
+        const lblFechamento = document.getElementById('lbl-fechamento-anterior'); 
+        const btnCancelar = document.getElementById('btn-cancelar-op'); 
+        
+        document.getElementById('valor-op-caixa').value = ""; 
+        desc.value = ""; 
+        desc.style.display = "block"; 
+        lblFechamento.style.display = "none";
 
         if(tipo === 'abertura') {
-            titulo.innerHTML = "<i class='fas fa-lock-open' style='color:var(--blue-header)'></i> Abertura de Caixa"; desc.value = "Fundo de Troco Inicial"; desc.style.display = "none"; lblFechamento.style.display = "block";
-            lblFechamento.innerText = `Dinheiro deixado ontem: R$ ${cxUltimoFechamento.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('valor-op-caixa').value = cxUltimoFechamento.toFixed(2); btnCancelar.style.display = "none";
+            titulo.innerHTML = "<i class='fas fa-lock-open' style='color:var(--blue-header)'></i> Abertura de Caixa"; 
+            desc.value = "Fundo de Troco Inicial"; 
+            desc.style.display = "none"; 
+            lblFechamento.style.display = "block";
+            lblFechamento.innerText = `Dinheiro deixado ontem: R$ ${cxUltimoFechamento.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; 
+            document.getElementById('valor-op-caixa').value = cxUltimoFechamento.toFixed(2); 
+            
+            // Trava: Oculta o botão de cancelar
+            btnCancelar.style.display = "none";
         } else if(tipo === 'sangria') {
-            titulo.innerHTML = "<i class='fas fa-hand-holding-usd' style='color:var(--blue-header)'></i> Registrar Sangria"; desc.placeholder = "Motivo da Sangria (Ex: Retirada para malote)"; btnCancelar.style.display = "block"; 
+            titulo.innerHTML = "<i class='fas fa-hand-holding-usd' style='color:var(--blue-header)'></i> Registrar Sangria"; 
+            desc.placeholder = "Motivo da Sangria (Ex: Retirada para malote)"; 
+            btnCancelar.style.display = "block"; 
         } else if(tipo === 'despesa') {
-            titulo.innerHTML = "<i class='fas fa-receipt' style='color:var(--blue-header)'></i> Lançar Despesa"; desc.placeholder = "Descrição da Despesa (Ex: Compra de material)"; btnCancelar.style.display = "block"; 
+            titulo.innerHTML = "<i class='fas fa-receipt' style='color:var(--blue-header)'></i> Lançar Despesa"; 
+            desc.placeholder = "Descrição da Despesa (Ex: Compra de material)"; 
+            btnCancelar.style.display = "block"; 
         }
         modal.style.display = 'flex';
     }
 
     async function confirmarOperacaoCaixa() {
-        const valor = parseFloat(document.getElementById('valor-op-caixa').value); const desc = document.getElementById('desc-op-caixa').value || "Não informada"; const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
+        const valor = parseFloat(document.getElementById('valor-op-caixa').value); 
+        const desc = document.getElementById('desc-op-caixa').value || "Não informada"; 
+        const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
+        
         if(!valor || valor <= 0) return alert("Insira um valor válido para prosseguir.");
-        let btn = document.getElementById('btn-op-caixa'); btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando..."; btn.disabled = true;
+
+        let btn = document.getElementById('btn-op-caixa'); 
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando..."; 
+        btn.disabled = true;
+
         try {
             if(tipoOperacaoAtual === 'abertura') {
-                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor }; const res = await enviarDadosServidor(payload); const data = await res.json(); cxSessao = data.idSessao; cxFundoInicial = valor; imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador);
+                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor }; 
+                const res = await enviarDadosServidor(payload); 
+                const data = await res.json(); 
+                cxSessao = data.idSessao; 
+                cxFundoInicial = valor; 
+                imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador);
             } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
-                if(!cxSessao) { alert("Sessão do caixa não identificada."); btn.innerHTML = "Confirmar Lançamento"; btn.disabled = false; return; }
-                const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
-                await enviarDadosServidor(payloadDespesa); imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
+                if(!cxSessao) { 
+                    alert("Sessão do caixa não identificada."); 
+                    btn.innerHTML = "Confirmar Lançamento"; 
+                    btn.disabled = false; 
+                    return; 
+                }
+                const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; 
+                const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
+                await enviarDadosServidor(payloadDespesa); 
+                imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
             }
             document.getElementById('modal-operacao-caixa').style.display = 'none';
-        } catch(e) { alert("Erro de comunicação com o servidor."); }
-        btn.innerHTML = "Confirmar Lançamento"; btn.disabled = false;
+        } catch(e) { 
+            alert("Erro de comunicação com o servidor."); 
+        }
+        btn.innerHTML = "Confirmar Lançamento"; 
+        btn.disabled = false;
     }
 
     async function abrirModalMovimentacao() {
-        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); document.getElementById('modal-movimentacao').style.display = 'flex';
-        const tbody = document.querySelector('#tabela-movimentacao tbody'); tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); 
+        document.getElementById('modal-movimentacao').style.display = 'flex';
+        const tbody = document.querySelector('#tabela-movimentacao tbody'); 
+        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+        
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); const data = await res.json(); tbody.innerHTML = "";
-            if(!data.movimentacoes || data.movimentacoes.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#64748b;'>Nenhuma movimentação no turno atual.</td></tr>"; return; }
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); 
+            const data = await res.json(); 
+            tbody.innerHTML = "";
+            
+            if(!data.movimentacoes || data.movimentacoes.length === 0) { 
+                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#64748b;'>Nenhuma movimentação no turno atual.</td></tr>"; 
+                return; 
+            }
+            
             data.movimentacoes.forEach(m => {
-                const tr = document.createElement('tr'); const corVal = m.tipo === 'ENTRADA' ? 'var(--green-text)' : 'var(--danger)'; tr.innerHTML = `<td>${m.hora}</td><td><b style="color:${corVal}">${m.tipo}</b></td><td>${m.desc}</td><td style="font-weight:bold; color:${corVal}">R$ ${m.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`; tbody.appendChild(tr);
+                const tr = document.createElement('tr'); 
+                const corVal = m.tipo === 'ENTRADA' ? 'var(--green-text)' : 'var(--danger)'; 
+                tr.innerHTML = `<td>${m.hora}</td><td><b style="color:${corVal}">${m.tipo}</b></td><td>${m.desc}</td><td style="font-weight:bold; color:${corVal}">R$ ${m.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`; 
+                tbody.appendChild(tr);
             });
-        } catch(e) { tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar movimentação.</td></tr>"; }
+        } catch(e) { 
+            tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar movimentação.</td></tr>"; 
+        }
     }
 
     function validarSenhaMaster() {
@@ -592,75 +697,145 @@
         if (SENHAS_MASTER[senhaInserida]) {
             adminAutorizador = SENHAS_MASTER[senhaInserida]; 
             document.getElementById('modal-auth-master').style.display = 'none';
-            if (motivoBloqueioAtual === 'horario') { bloqueioTempoIgnorado = true; abrirModalFechamento(); } 
-            else if (motivoBloqueioAtual === 'quebra') { bloqueioQuebraIgnorado = true; confirmarFechamentoDefinitivo(); }
+            
+            if (motivoBloqueioAtual === 'horario') { 
+                bloqueioTempoIgnorado = true; 
+                abrirModalFechamento(); 
+            } else if (motivoBloqueioAtual === 'quebra') { 
+                bloqueioQuebraIgnorado = true; 
+                confirmarFechamentoDefinitivo(); 
+            }
         } else {
-            alert("Senha Master incorreta!"); document.getElementById('senha-master').value = '';
+            alert("Senha Master incorreta!"); 
+            document.getElementById('senha-master').value = '';
         }
     }
 
     async function abrirModalFechamento() {
         document.getElementById("dropdown-caixa").classList.remove("show-dropdown");
-        const agora = new Date(); const hora = agora.getHours(); const minuto = agora.getMinutes();
+
+        // === TRAVA DE HORÁRIO (FECHAR ANTES DAS 17:50) ===
+        const agora = new Date(); 
+        const hora = agora.getHours(); 
+        const minuto = agora.getMinutes();
         
         if ((hora < 17 || (hora === 17 && minuto < 50)) && !bloqueioTempoIgnorado) {
-            motivoBloqueioAtual = 'horario'; document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:50 requer a senha Master."; document.getElementById('modal-auth-master').style.display = 'flex'; document.getElementById('senha-master').value = ''; return; 
+            motivoBloqueioAtual = 'horario'; 
+            document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:50 requer a senha Master."; 
+            document.getElementById('modal-auth-master').style.display = 'flex'; 
+            document.getElementById('senha-master').value = ''; 
+            return; 
         }
 
-        document.getElementById('modal-fechamento').style.display = 'flex'; document.getElementById('fech-informado').value = ""; document.getElementById('fech-diferenca').innerText = "Calculando servidor..."; document.getElementById('btn-confirma-fechamento').disabled = true;
+        document.getElementById('modal-fechamento').style.display = 'flex'; 
+        document.getElementById('fech-informado').value = ""; 
+        document.getElementById('fech-diferenca').innerText = "Calculando servidor..."; 
+        document.getElementById('btn-confirma-fechamento').disabled = true;
 
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); cxResumoAtual = await res.json();
-            if(cxResumoAtual.status === "Erro" || cxResumoAtual.erro) { alert("⚠️ O servidor não reconheceu o comando."); document.getElementById('fech-diferenca').innerText = "Erro do Servidor."; return; }
-            const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0); const saldoEsperado = cxFundoInicial + (cxResumoAtual.vendasDinheiro || 0) - saidas;
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); 
+            cxResumoAtual = await res.json();
             
-            document.getElementById('fech-fundo').innerText = `R$ ${cxFundoInicial.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-entradas').innerText = `R$ ${(cxResumoAtual.vendasDinheiro || 0).toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-saidas').innerText = `R$ ${saidas.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-esperado').innerText = `R$ ${saldoEsperado.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            document.getElementById('fech-esperado').dataset.valor = saldoEsperado; document.getElementById('fech-diferenca').innerText = "Informe o valor em gaveta acima"; document.getElementById('btn-confirma-fechamento').disabled = false;
-        } catch (e) { document.getElementById('fech-diferenca').innerText = "Erro ao buscar dados do servidor."; }
+            if(cxResumoAtual.status === "Erro" || cxResumoAtual.erro) { 
+                alert("⚠️ O servidor não reconheceu o comando."); 
+                document.getElementById('fech-diferenca').innerText = "Erro do Servidor."; 
+                return; 
+            }
+            
+            const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0); 
+            const saldoEsperado = cxFundoInicial + (cxResumoAtual.vendasDinheiro || 0) - saidas;
+            
+            document.getElementById('fech-fundo').innerText = `R$ ${cxFundoInicial.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; 
+            document.getElementById('fech-entradas').innerText = `R$ ${(cxResumoAtual.vendasDinheiro || 0).toLocaleString('pt-br', {minimumFractionDigits: 2})}`; 
+            document.getElementById('fech-saidas').innerText = `R$ ${saidas.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; 
+            document.getElementById('fech-esperado').innerText = `R$ ${saldoEsperado.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+            
+            document.getElementById('fech-esperado').dataset.valor = saldoEsperado; 
+            document.getElementById('fech-diferenca').innerText = "Informe o valor em gaveta acima"; 
+            document.getElementById('btn-confirma-fechamento').disabled = false;
+        } catch (e) { 
+            document.getElementById('fech-diferenca').innerText = "Erro ao buscar dados do servidor."; 
+        }
     }
 
     function calcularQuebraFechamento() {
-        const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0; const informado = parseFloat(document.getElementById('fech-informado').value) || 0; const diferenca = informado - esperado; const divDif = document.getElementById('fech-diferenca');
-        if (diferenca === 0) { divDif.innerText = "Diferença: R$ 0,00 (Caixa Batendo ✔️)"; divDif.style.color = "var(--green-text)"; } else if (diferenca > 0) { divDif.innerText = `Diferença: + R$ ${diferenca.toLocaleString('pt-br', {minimumFractionDigits: 2})} (Sobra em Caixa)`; divDif.style.color = "var(--blue-header)"; } else { divDif.innerText = `Diferença: - R$ ${Math.abs(diferenca).toLocaleString('pt-br', {minimumFractionDigits: 2})} (Falta em Caixa ⚠️)`; divDif.style.color = "var(--danger)"; }
+        const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0; 
+        const informado = parseFloat(document.getElementById('fech-informado').value) || 0; 
+        const diferenca = informado - esperado; 
+        const divDif = document.getElementById('fech-diferenca');
+        
+        if (diferenca === 0) { 
+            divDif.innerText = "Diferença: R$ 0,00 (Caixa Batendo ✔️)"; 
+            divDif.style.color = "var(--green-text)"; 
+        } else if (diferenca > 0) { 
+            divDif.innerText = `Diferença: + R$ ${diferenca.toLocaleString('pt-br', {minimumFractionDigits: 2})} (Sobra em Caixa)`; 
+            divDif.style.color = "var(--blue-header)"; 
+        } else { 
+            divDif.innerText = `Diferença: - R$ ${Math.abs(diferenca).toLocaleString('pt-br', {minimumFractionDigits: 2})} (Falta em Caixa ⚠️)`; 
+            divDif.style.color = "var(--danger)"; 
+        }
     }
 
     async function confirmarFechamentoDefinitivo() {
         const informado = parseFloat(document.getElementById('fech-informado').value);
         if(isNaN(informado)) return alert("Digite o valor exato contado na gaveta de dinheiro.");
+        
         const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0;
         const quebra = informado - esperado;
         
+        // === TRAVA DE VALOR NEGATIVO (FALTA NO CAIXA) ===
         if (quebra < 0 && !bloqueioQuebraIgnorado) {
             motivoBloqueioAtual = 'quebra';
             document.getElementById('msg-auth-master').innerText = `O caixa apresenta falta de R$ ${Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2})}. Esta operação requer a senha Master para gerar o Vale.`;
-            document.getElementById('modal-auth-master').style.display = 'flex'; document.getElementById('senha-master').value = ''; return; 
+            document.getElementById('modal-auth-master').style.display = 'flex'; 
+            document.getElementById('senha-master').value = ''; 
+            return; 
         }
 
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         const btn = document.getElementById('btn-confirma-fechamento');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno..."; btn.disabled = true;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno..."; 
+        btn.disabled = true;
 
         const payload = {
-            tipo: 'fechar_caixa', idSessao: cxSessao,
-            detalhes: { dinheiro: informado, pix: cxResumoAtual.vendasOutros || 0, debito: 0, credito: 0, boleto: 0, bonuscred: 0, quebra: quebra, gerente: operador, autorizador: adminAutorizador || "Não exigido" }
+            tipo: 'fechar_caixa', 
+            idSessao: cxSessao,
+            detalhes: { 
+                dinheiro: informado, 
+                pix: cxResumoAtual.vendasOutros || 0, 
+                debito: 0, credito: 0, boleto: 0, bonuscred: 0, 
+                quebra: quebra, 
+                gerente: operador, 
+                autorizador: adminAutorizador || "Não exigido" 
+            }
         };
 
         try {
             await enviarDadosServidor(payload);
             imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAutorizador);
             
-            // Se houve quebra negativa (falta de dinheiro no caixa), imprime o cupom extra do Vale
+            // Impressão extra: O VALE do funcionário
             if (quebra < 0) {
                 setTimeout(() => { imprimirValeFuncionario(quebra, operador, adminAutorizador); }, 800);
             }
             
             alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
-            cxSessao = ""; carrinho = []; location.reload(); 
-        } catch(e) { alert("Erro ao fechar o caixa no servidor."); btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; btn.disabled = false; }
+            
+            // Trava 2: Zera o caixa localmente e recarrega para forçar nova abertura
+            cxSessao = ""; 
+            carrinho = []; 
+            location.reload(); 
+        } catch(e) { 
+            alert("Erro ao fechar o caixa no servidor."); 
+            btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; 
+            btn.disabled = false; 
+        }
     }
 
-    // --- NOVA FUNÇÃO PARA IMPRIMIR O VALE (QUEBRA DE CAIXA) ---
+    // =========================================================================
+    // FUNÇÕES DE IMPRESSÃO DE RELATÓRIO E VALE
+    // =========================================================================
     function imprimirValeFuncionario(quebra, operador, adminAuth) {
         const janela = window.open('', '_blank');
         const dataAtual = new Date().toLocaleString('pt-BR');
@@ -712,10 +887,15 @@
         const dataAtual = new Date().toLocaleString('pt-BR');
         const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
         let movHtml = "";
-        cxResumoAtual.movimentacoes.forEach(m => { movHtml += `<tr><td style="font-size:10px;">${m.hora}</td><td style="font-size:10px;">${m.tipo}</td><td style="font-size:10px;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right;">R$ ${m.valor.toFixed(2)}</td></tr>`; });
+        
+        cxResumoAtual.movimentacoes.forEach(m => { 
+            movHtml += `<tr><td style="font-size:10px;">${m.hora}</td><td style="font-size:10px;">${m.tipo}</td><td style="font-size:10px;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right;">R$ ${m.valor.toFixed(2)}</td></tr>`; 
+        });
 
         let linhaAutorizacao = '';
-        if (adminAuth) { linhaAutorizacao = `<hr style="border:0; border-top:1px dashed #000; margin:5px 0;"><div class="linha" style="font-weight:bold;"><span>Autorizado por:</span> <span>${adminAuth}</span></div>`; }
+        if (adminAuth) { 
+            linhaAutorizacao = `<hr style="border:0; border-top:1px dashed #000; margin:5px 0;"><div class="linha" style="font-weight:bold;"><span>Autorizado por:</span> <span>${adminAuth}</span></div>`; 
+        }
 
         const templateHtml = `
         <!DOCTYPE html>
@@ -753,12 +933,14 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 800); }<\/script>
         </body>
         </html>`;
-        janela.document.write(templateHtml); janela.document.close();
+        janela.document.write(templateHtml); 
+        janela.document.close();
     }
 
     function imprimirComprovanteCaixa(tipo, valor, desc, operador) {
         const janela = window.open('', '_blank');
         const dataAtual = new Date().toLocaleString('pt-BR');
+        
         const templateHtml = `
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -784,75 +966,419 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
-        janela.document.write(templateHtml); janela.document.close();
+        janela.document.write(templateHtml); 
+        janela.document.close();
     }
 
-    function recarregarParametros() { document.getElementById('tela-loading').style.display = 'flex'; carregarDados().then(() => { setTimeout(() => { document.getElementById('tela-loading').style.display = 'none'; }, 1500); }); }
-    function filtrarCarrinho() { const input = document.getElementById("input-filtro-tabela").value.toUpperCase(); const trs = document.querySelectorAll("#tabela-venda tbody tr"); trs.forEach(tr => { const nomeProduto = tr.cells[0].textContent.toUpperCase(); tr.style.display = nomeProduto.includes(input) ? "" : "none"; }); }
-    function resetarPDV() { carrinho = []; renderTable(); document.getElementById('cliente-nome').value = "Venda ao consumidor"; document.getElementById('cliente-cpf').value = "Não Informado"; document.getElementById('tipo-venda').value = "direta"; document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); document.getElementById('v-desconto').value = ""; document.getElementById('v-acrescimo').value = ""; document.getElementById('v-cred-parcelas').value = "1"; document.getElementById('chk-pag-parcial').checked = false; fecharTelaPagamento(); const btn = document.getElementById('btn-confirma-fim'); btn.disabled = false; btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; }
+    // =========================================================================
+    // FUNÇÕES DO PDV E CARRINHO (COM TRAVAS DE CAIXA FECHADO)
+    // =========================================================================
+    function recarregarParametros() { 
+        document.getElementById('tela-loading').style.display = 'flex'; 
+        carregarDados().then(() => { setTimeout(() => { document.getElementById('tela-loading').style.display = 'none'; }, 1500); }); 
+    }
+
+    function filtrarCarrinho() { 
+        const input = document.getElementById("input-filtro-tabela").value.toUpperCase(); 
+        const trs = document.querySelectorAll("#tabela-venda tbody tr"); 
+        trs.forEach(tr => { 
+            const nomeProduto = tr.cells[0].textContent.toUpperCase(); 
+            tr.style.display = nomeProduto.includes(input) ? "" : "none"; 
+        }); 
+    }
+
+    function resetarPDV() { 
+        carrinho = []; 
+        renderTable(); 
+        document.getElementById('cliente-nome').value = "Venda ao consumidor"; 
+        document.getElementById('cliente-cpf').value = "Não Informado"; 
+        document.getElementById('tipo-venda').value = "direta"; 
+        document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); 
+        document.getElementById('v-desconto').value = ""; 
+        document.getElementById('v-acrescimo').value = ""; 
+        document.getElementById('v-cred-parcelas').value = "1"; 
+        document.getElementById('chk-pag-parcial').checked = false; 
+        fecharTelaPagamento(); 
+        const btn = document.getElementById('btn-confirma-fim'); 
+        btn.disabled = false; 
+        btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; 
+    }
 
     async function verificarTipoVenda(valor) { 
-        if (!cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); document.getElementById('tipo-venda').value = 'direta'; abrirModalCaixa('abertura'); return; }
-        if (valor === 'parcial') {
-            document.getElementById('modal-parciais').style.display = 'flex'; const tbody = document.querySelector('#tabela-parciais tbody'); tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-            try {
-                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarParciais&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = "";
-                if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; return; }
-                dados.forEach(p => {
-                    const tr = document.createElement('tr'); tr.className = "linha-pendente"; const totalF = tratarValor(p.total); const saldoF = tratarValor(p.saldo);
-                    tr.innerHTML = `<td>${p.data||"-"}</td><td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="font-weight:600;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="color:var(--danger); font-weight:700;">R$ ${saldoF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
-                    tr.ondblclick = () => { const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; carrinho = [{ nome: "PGTO SALDO PARCIAL - " + p.cliente, valor: saldoF, total: saldoF, qtd: 1, idOriginal: idBaixa }]; document.getElementById('cliente-nome').value = p.cliente; document.getElementById('vendedor-select').value = p.vendedor; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-parciais').style.display = 'none'; };
-                    tbody.appendChild(tr);
-                });
-            } catch (e) { tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; }
+        if (!cxSessao) { 
+            alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); 
+            document.getElementById('tipo-venda').value = 'direta'; 
+            abrirModalCaixa('abertura'); 
+            return; 
         }
-        if (valor === 'agrupada') {
-            document.getElementById('modal-agrupada').style.display = 'flex'; const tbody = document.querySelector('#tabela-agrupada tbody'); tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando pedidos... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+
+        if (valor === 'parcial') {
+            document.getElementById('modal-parciais').style.display = 'flex'; 
+            const tbody = document.querySelector('#tabela-parciais tbody'); 
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
             try {
-                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarAgrupados&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = "";
-                if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#64748b;'>Nenhum pedido pendente.</td></tr>"; return; }
+                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarParciais&nocache=${Date.now()}`); 
+                const dados = await res.json(); 
+                tbody.innerHTML = "";
+                if(!Array.isArray(dados) || dados.length === 0) { 
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; 
+                    return; 
+                }
                 dados.forEach(p => {
-                    const tr = document.createElement('tr'); tr.className = "linha-pendente"; let totalF = tratarValor(p.total); let rawStr = String(p.total); if (!rawStr.includes(',') && !rawStr.includes('.') && totalF > 0) { totalF = totalF / 100; }
-                    tr.innerHTML = `<td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
-                    tr.ondblclick = () => { const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; carrinho = [{ nome: "PGTO PEDIDO - " + p.cliente, valor: totalF, total: totalF, qtd: 1, idOriginal: idBaixa }]; document.getElementById('cliente-nome').value = p.cliente; document.getElementById('vendedor-select').value = p.vendedor; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-agrupada').style.display = 'none'; };
+                    const tr = document.createElement('tr'); 
+                    tr.className = "linha-pendente"; 
+                    const totalF = tratarValor(p.total); 
+                    const saldoF = tratarValor(p.saldo);
+                    tr.innerHTML = `<td>${p.data||"-"}</td><td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="font-weight:600;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="color:var(--danger); font-weight:700;">R$ ${saldoF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
+                    tr.ondblclick = () => { 
+                        const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; 
+                        carrinho = [{ nome: "PGTO SALDO PARCIAL - " + p.cliente, valor: saldoF, total: saldoF, qtd: 1, idOriginal: idBaixa }]; 
+                        document.getElementById('cliente-nome').value = p.cliente; 
+                        document.getElementById('vendedor-select').value = p.vendedor; 
+                        document.getElementById('tipo-venda').value = 'direta'; 
+                        renderTable(); 
+                        document.getElementById('modal-parciais').style.display = 'none'; 
+                    };
                     tbody.appendChild(tr);
                 });
-            } catch (e) { tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar pedidos agrupados.</td></tr>"; }
+            } catch (e) { 
+                tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; 
+            }
+        }
+
+        if (valor === 'agrupada') {
+            document.getElementById('modal-agrupada').style.display = 'flex'; 
+            const tbody = document.querySelector('#tabela-agrupada tbody'); 
+            tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando pedidos... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+            try {
+                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarAgrupados&nocache=${Date.now()}`); 
+                const dados = await res.json(); 
+                tbody.innerHTML = "";
+                if(!Array.isArray(dados) || dados.length === 0) { 
+                    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#64748b;'>Nenhum pedido pendente.</td></tr>"; 
+                    return; 
+                }
+                dados.forEach(p => {
+                    const tr = document.createElement('tr'); 
+                    tr.className = "linha-pendente"; 
+                    let totalF = tratarValor(p.total); 
+                    let rawStr = String(p.total); 
+                    if (!rawStr.includes(',') && !rawStr.includes('.') && totalF > 0) { totalF = totalF / 100; }
+                    tr.innerHTML = `<td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
+                    tr.ondblclick = () => { 
+                        const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; 
+                        carrinho = [{ nome: "PGTO PEDIDO - " + p.cliente, valor: totalF, total: totalF, qtd: 1, idOriginal: idBaixa }]; 
+                        document.getElementById('cliente-nome').value = p.cliente; 
+                        document.getElementById('vendedor-select').value = p.vendedor; 
+                        document.getElementById('tipo-venda').value = 'direta'; 
+                        renderTable(); 
+                        document.getElementById('modal-agrupada').style.display = 'none'; 
+                    };
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { 
+                tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar pedidos agrupados.</td></tr>"; 
+            }
         }
     }
 
-    function addItem() { if (!cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para poder lançar itens."); abrirModalCaixa('abertura'); return; } const nome = document.getElementById('busca-prod').value; const qtdInput = parseInt(document.getElementById('qtd').value) || 1; const p = produtosLista.find(x => x.nome === nome); if(!p) return alert("Produto não encontrado na lista."); carrinho.push({ nome: p.nome, valor: p.valor, total: p.valor * qtdInput, qtd: qtdInput }); renderTable(); document.getElementById('busca-prod').value = ""; document.getElementById('qtd').value = "1"; }
-    function limparCarrinho() { carrinho = []; renderTable(); document.getElementById('cliente-nome').value = "Venda ao consumidor"; document.getElementById('cliente-cpf').value = "Não Informado"; }
-    function renderTable() { const tbody = document.querySelector('#tabela-venda tbody'); tbody.innerHTML = ""; let total = 0; carrinho.forEach((item, i) => { total += item.total; tbody.innerHTML += `<tr><td style="font-weight:500;">${item.nome}</td><td>${item.qtd}</td><td>R$ ${item.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="font-weight:600;">R$ ${item.total.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="carrinho.splice(${i},1);renderTable();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;"><i class="fas fa-trash"></i></button></td></tr>`; }); document.getElementById('total-venda').innerText = total.toLocaleString('pt-br', {minimumFractionDigits: 2}); }
-    function getSubtotalCarrinho() { return carrinho.reduce((a,b) => a + (b.total || 0), 0); }
-    function abrirTelaPagamento() { if (!cxSessao) { alert("Caixa Fechado! Abra o caixa para realizar recebimentos."); abrirModalCaixa('abertura'); return; } if(carrinho.length === 0) return alert("Carrinho vazio. Insira itens ou puxe um pedido pendente."); const nomeCliente = document.getElementById('cliente-nome').value.trim(); if (nomeCliente === "") { document.getElementById('cliente-nome').value = "Venda ao consumidor"; } document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); document.getElementById('v-desconto').value = ""; document.getElementById('v-acrescimo').value = ""; document.getElementById('v-cred-parcelas').value = "1"; document.getElementById('chk-pag-parcial').checked = false; document.getElementById('mp-lbl-cliente').innerText = document.getElementById('cliente-nome').value; document.getElementById('lbl-mp-subtotal').innerText = getSubtotalCarrinho().toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('modal-pagamento').style.display = 'flex'; calcularCaixa(); }
-    function fecharTelaPagamento() { document.getElementById('modal-pagamento').style.display = 'none'; }
-    function calcularCaixa() { const subtotal = getSubtotalCarrinho(); const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; const totalVendaFinal = (subtotal - desconto) + acrescimo; let totalPago = 0; document.querySelectorAll('.in-pag').forEach(inp => { totalPago += (parseFloat(inp.value) || 0); }); let falta = totalVendaFinal - totalPago; let troco = 0; if (falta < 0) { troco = Math.abs(falta); falta = 0; } document.getElementById('txt-total-venda').innerText = totalVendaFinal.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-total-pago').innerText = totalPago.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-falta-pagar').innerText = falta.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-troco').innerText = troco.toLocaleString('pt-br', {minimumFractionDigits: 2}); }
-    
-    async function confirmarVendaFechada() {
-        const nomeClienteValidacao = document.getElementById('cliente-nome').value.trim(); if (nomeClienteValidacao === "" || nomeClienteValidacao.toUpperCase() === "VENDA AO CONSUMIDOR") { return alert("Erro: Cliente não informado. Feche esta tela e informe o cliente."); }
-        const subtotal = getSubtotalCarrinho(); const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; const totalVendaFinal = (subtotal - desconto) + acrescimo;
-        let totalPago = 0; let metodosUsados = []; const camposPagamento = [ { id: 'v-deb-maestro', nome: 'Débito Maestro' }, { id: 'v-deb-master', nome: 'Débito Master' }, { id: 'v-deb-visa', nome: 'Débito Visa' }, { id: 'v-cred-master', nome: 'Crédito Master' }, { id: 'v-cred-visa', nome: 'Crédito Visa' }, { id: 'v-cred-outros', nome: 'Crédito Elo/Outros' }, { id: 'v-out-din', nome: 'Dinheiro' }, { id: 'v-out-pix', nome: 'PIX' }, { id: 'v-out-boleto', nome: 'Boleto' }, { id: 'v-out-bonuscred', nome: 'Bonuscred' }, { id: 'v-out-cred', nome: 'Crediário' } ];
-        camposPagamento.forEach(campo => { const val = parseFloat(document.getElementById(campo.id).value) || 0; if(val > 0) { totalPago += val; metodosUsados.push(campo.nome); } });
-        const isParcialPermitido = document.getElementById('chk-pag-parcial').checked; const emitirNF = document.getElementById('chk-imprimir-nfce').checked; const imprimirA4 = document.getElementById('chk-imprimir-recibo').checked;
-        if (totalPago === 0 && !isParcialPermitido) { return alert("Insira o valor nos campos de pagamento para prosseguir."); } let falta = totalVendaFinal - totalPago; if (falta > 0.01 && !isParcialPermitido) { return alert(`Falta pagar R$ ${falta.toLocaleString('pt-br', {minimumFractionDigits: 2})}. Marque a opção 'Pagamento parcial' se quiser gerar a dívida.`); }
-        const parcelasNum = document.getElementById('v-cred-parcelas').value; const stringPagamento = metodosUsados.join(" + ") || "Sinal / A Prazo"; let idPedidoOriginal = "NOVO"; let tipoOrigem = "venda_direta"; 
-        if (carrinho.length > 0 && carrinho[0].idOriginal) { idPedidoOriginal = carrinho[0].idOriginal; if (carrinho[0].nome.includes("PGTO PEDIDO")) { tipoOrigem = "baixa_agrupado"; } else if (carrinho[0].nome.includes("PGTO SALDO")) { tipoOrigem = "baixa_parcial"; } }
+    function addItem() { 
+        if (!cxSessao) { 
+            alert("Atenção! O caixa está fechado. Realize a abertura para poder lançar itens."); 
+            abrirModalCaixa('abertura'); 
+            return; 
+        } 
+        const nome = document.getElementById('busca-prod').value; 
+        const qtdInput = parseInt(document.getElementById('qtd').value) || 1; 
+        const p = produtosLista.find(x => x.nome === nome); 
+        
+        if(!p) return alert("Produto não encontrado na lista."); 
+        
+        carrinho.push({ nome: p.nome, valor: p.valor, total: p.valor * qtdInput, qtd: qtdInput }); 
+        renderTable(); 
+        document.getElementById('busca-prod').value = ""; 
+        document.getElementById('qtd').value = "1"; 
+    }
 
-        const payload = { tipo: "venda", origem: tipoOrigem, idOriginal: idPedidoOriginal, vendedor: document.getElementById('vendedor-select').value, nomeCliente: document.getElementById('cliente-nome').value, telefone: "Não Informado", cpf: document.getElementById('cliente-cpf').value, itens: carrinho, subtotal: subtotal, desconto: desconto, acrescimo: acrescimo, valorTotal: totalVendaFinal, valorPago: totalPago, saldoDevedor: (isParcialPermitido && falta > 0) ? falta : 0, formaPagamento: stringPagamento, condicao: (isParcialPermitido && falta > 0) ? "Parcial" : "A Vista", parcelas: parcelasNum + "x", idVenda: "AMMO-" + Date.now(), emitirNotaFiscal: emitirNF };
-        const btn = document.getElementById('btn-confirma-fim'); btn.disabled = true; btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Finalizando...";
+    function limparCarrinho() { 
+        carrinho = []; 
+        renderTable(); 
+        document.getElementById('cliente-nome').value = "Venda ao consumidor"; 
+        document.getElementById('cliente-cpf').value = "Não Informado"; 
+    }
+
+    function renderTable() { 
+        const tbody = document.querySelector('#tabela-venda tbody'); 
+        tbody.innerHTML = ""; 
+        let total = 0; 
+        carrinho.forEach((item, i) => { 
+            total += item.total; 
+            tbody.innerHTML += `<tr><td style="font-weight:500;">${item.nome}</td><td>${item.qtd}</td><td>R$ ${item.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="font-weight:600;">R$ ${item.total.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="carrinho.splice(${i},1);renderTable();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;"><i class="fas fa-trash"></i></button></td></tr>`; 
+        }); 
+        document.getElementById('total-venda').innerText = total.toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+    }
+
+    function getSubtotalCarrinho() { 
+        return carrinho.reduce((a,b) => a + (b.total || 0), 0); 
+    }
+
+    function abrirTelaPagamento() { 
+        if (!cxSessao) { 
+            alert("Caixa Fechado! Abra o caixa para realizar recebimentos."); 
+            abrirModalCaixa('abertura'); 
+            return; 
+        } 
+        
+        if(carrinho.length === 0) return alert("Carrinho vazio. Insira itens ou puxe um pedido pendente."); 
+        
+        const nomeCliente = document.getElementById('cliente-nome').value.trim(); 
+        if (nomeCliente === "") { 
+            document.getElementById('cliente-nome').value = "Venda ao consumidor"; 
+        } 
+        
+        document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); 
+        document.getElementById('v-desconto').value = ""; 
+        document.getElementById('v-acrescimo').value = ""; 
+        document.getElementById('v-cred-parcelas').value = "1"; 
+        document.getElementById('chk-pag-parcial').checked = false; 
+        
+        document.getElementById('mp-lbl-cliente').innerText = document.getElementById('cliente-nome').value; 
+        document.getElementById('lbl-mp-subtotal').innerText = getSubtotalCarrinho().toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+        
+        document.getElementById('modal-pagamento').style.display = 'flex'; 
+        calcularCaixa(); 
+    }
+
+    function fecharTelaPagamento() { 
+        document.getElementById('modal-pagamento').style.display = 'none'; 
+    }
+
+    function calcularCaixa() { 
+        const subtotal = getSubtotalCarrinho(); 
+        const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; 
+        const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; 
+        const totalVendaFinal = (subtotal - desconto) + acrescimo; 
+        
+        let totalPago = 0; 
+        document.querySelectorAll('.in-pag').forEach(inp => { 
+            totalPago += (parseFloat(inp.value) || 0); 
+        }); 
+        
+        let falta = totalVendaFinal - totalPago; 
+        let troco = 0; 
+        if (falta < 0) { 
+            troco = Math.abs(falta); 
+            falta = 0; 
+        } 
+        
+        document.getElementById('txt-total-venda').innerText = totalVendaFinal.toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+        document.getElementById('txt-total-pago').innerText = totalPago.toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+        document.getElementById('txt-falta-pagar').innerText = falta.toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+        document.getElementById('txt-troco').innerText = troco.toLocaleString('pt-br', {minimumFractionDigits: 2}); 
+    }
+
+    async function confirmarVendaFechada() {
+        const nomeClienteValidacao = document.getElementById('cliente-nome').value.trim(); 
+        if (nomeClienteValidacao === "" || nomeClienteValidacao.toUpperCase() === "VENDA AO CONSUMIDOR") { 
+            return alert("Erro: Cliente não informado. Feche esta tela e informe o cliente."); 
+        }
+        
+        const subtotal = getSubtotalCarrinho(); 
+        const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; 
+        const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; 
+        const totalVendaFinal = (subtotal - desconto) + acrescimo;
+        
+        let totalPago = 0; 
+        let metodosUsados = []; 
+        const camposPagamento = [ 
+            { id: 'v-deb-maestro', nome: 'Débito Maestro' }, { id: 'v-deb-master', nome: 'Débito Master' }, 
+            { id: 'v-deb-visa', nome: 'Débito Visa' }, { id: 'v-cred-master', nome: 'Crédito Master' }, 
+            { id: 'v-cred-visa', nome: 'Crédito Visa' }, { id: 'v-cred-outros', nome: 'Crédito Elo/Outros' }, 
+            { id: 'v-out-din', nome: 'Dinheiro' }, { id: 'v-out-pix', nome: 'PIX' }, 
+            { id: 'v-out-boleto', nome: 'Boleto' }, { id: 'v-out-bonuscred', nome: 'Bonuscred' }, 
+            { id: 'v-out-cred', nome: 'Crediário' } 
+        ];
+        
+        camposPagamento.forEach(campo => { 
+            const val = parseFloat(document.getElementById(campo.id).value) || 0; 
+            if(val > 0) { 
+                totalPago += val; 
+                metodosUsados.push(campo.nome); 
+            } 
+        });
+        
+        const isParcialPermitido = document.getElementById('chk-pag-parcial').checked; 
+        const emitirNF = document.getElementById('chk-imprimir-nfce').checked; 
+        const imprimirA4 = document.getElementById('chk-imprimir-recibo').checked;
+        
+        if (totalPago === 0 && !isParcialPermitido) { 
+            return alert("Insira o valor nos campos de pagamento para prosseguir."); 
+        } 
+        
+        let falta = totalVendaFinal - totalPago; 
+        
+        if (falta > 0.01 && !isParcialPermitido) { 
+            return alert(`Falta pagar R$ ${falta.toLocaleString('pt-br', {minimumFractionDigits: 2})}. Marque a opção 'Pagamento parcial' se quiser gerar a dívida.`); 
+        }
+        
+        const parcelasNum = document.getElementById('v-cred-parcelas').value; 
+        const stringPagamento = metodosUsados.join(" + ") || "Sinal / A Prazo"; 
+        
+        let idPedidoOriginal = "NOVO"; 
+        let tipoOrigem = "venda_direta"; 
+        
+        if (carrinho.length > 0 && carrinho[0].idOriginal) { 
+            idPedidoOriginal = carrinho[0].idOriginal; 
+            if (carrinho[0].nome.includes("PGTO PEDIDO")) { 
+                tipoOrigem = "baixa_agrupado"; 
+            } else if (carrinho[0].nome.includes("PGTO SALDO")) { 
+                tipoOrigem = "baixa_parcial"; 
+            } 
+        }
+
+        const payload = { 
+            tipo: "venda", 
+            origem: tipoOrigem, 
+            idOriginal: idPedidoOriginal, 
+            vendedor: document.getElementById('vendedor-select').value, 
+            nomeCliente: document.getElementById('cliente-nome').value, 
+            telefone: "Não Informado", 
+            cpf: document.getElementById('cliente-cpf').value, 
+            itens: carrinho, 
+            subtotal: subtotal, 
+            desconto: desconto, 
+            acrescimo: acrescimo, 
+            valorTotal: totalVendaFinal, 
+            valorPago: totalPago, 
+            saldoDevedor: (isParcialPermitido && falta > 0) ? falta : 0, 
+            formaPagamento: stringPagamento, 
+            condicao: (isParcialPermitido && falta > 0) ? "Parcial" : "A Vista", 
+            parcelas: parcelasNum + "x", 
+            idVenda: "AMMO-" + Date.now(), 
+            emitirNotaFiscal: emitirNF 
+        };
+        
+        const btn = document.getElementById('btn-confirma-fim'); 
+        btn.disabled = true; 
+        btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Finalizando...";
 
         try {
-            if(imprimirA4) { imprimirReciboA4(payload); } const resposta = await enviarDadosServidor(payload); const dadosResposta = await resposta.json();
-            if(emitirNF) { if(dadosResposta.link_danfe) { alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); window.open(dadosResposta.link_danfe, '_blank'); } else if (dadosResposta.alerta_nfe) { alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); } else { alert(dadosResposta.mensagem || "A nota está sendo processada pela SEFAZ."); } } else { alert("Operação registrada no servidor com sucesso!"); } setTimeout(() => { resetarPDV(); }, 1500);
-        } catch (erro) { console.error(erro); alert("Erro na comunicação com o servidor. Verifique a internet."); btn.disabled = false; btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; }
+            if(imprimirA4) { imprimirReciboA4(payload); } 
+            const resposta = await enviarDadosServidor(payload); 
+            const dadosResposta = await resposta.json();
+            
+            if(emitirNF) { 
+                if(dadosResposta.link_danfe) { 
+                    alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); 
+                    window.open(dadosResposta.link_danfe, '_blank'); 
+                } else if (dadosResposta.alerta_nfe) { 
+                    alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
+                } else { 
+                    alert(dadosResposta.mensagem || "A nota está sendo processada pela SEFAZ."); 
+                } 
+            } else { 
+                alert("Operação registrada no servidor com sucesso!"); 
+            } 
+            
+            setTimeout(() => { resetarPDV(); }, 1500);
+        } catch (erro) { 
+            console.error(erro); 
+            alert("Erro na comunicação com o servidor. Verifique a internet."); 
+            btn.disabled = false; 
+            btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; 
+        }
     }
 
-    async function abrirModalProdutos() { document.getElementById('modal-lista-produtos').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-produtos tbody'); tbody.innerHTML = ""; if (produtosLista.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum produto carregado.</td></tr>"; return; } produtosLista.forEach(p => { const tr = document.createElement('tr'); tr.innerHTML = `<td style="text-align:left; font-weight: 500;">${p.nome}</td><td style="font-weight:700; color:var(--green-text);">R$ ${p.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="adicionarProdutoPeloModal('${p.nome}')" style="background:var(--blue-header); color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:600;">Adicionar</button></td>`; tbody.appendChild(tr); }); }
-    function adicionarProdutoPeloModal(nomeProd) { document.getElementById('busca-prod').value = nomeProd; addItem(); document.getElementById('modal-lista-produtos').style.display = 'none'; }
-    async function abrirModalClientes() { document.getElementById('modal-lista-clientes').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-clientes tbody'); tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando clientes no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; try { const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarClientes&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = ""; if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum cliente encontrado.</td></tr>"; return; } dados.forEach(c => { const tr = document.createElement('tr'); tr.className = "linha-pendente"; tr.innerHTML = `<td style="text-align:left; font-weight:600;">${c.nome || '-'}</td><td>${c.telefone || '-'}</td><td>${c.cpf || '-'}</td>`; tr.ondblclick = () => { document.getElementById('cliente-nome').value = c.nome; document.getElementById('cliente-cpf').value = c.cpf || 'Não Informado'; document.getElementById('modal-lista-clientes').style.display = 'none'; }; tbody.appendChild(tr); }); } catch (e) { tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar clientes.</td></tr>"; } }
-    async function abrirModalOrcamentos() { document.getElementById('modal-lista-orcamentos').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-orcamentos tbody'); tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando orçamentos no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; try { const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=cofrinho&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = ""; if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Nenhum orçamento pendente.</td></tr>"; return; } dados.forEach(o => { const tr = document.createElement('tr'); const valorF = tratarValor(o.total || o.valor); tr.innerHTML = `<td style="text-align:left; font-weight:600;">${o.cliente || '-'}</td><td>${o.data || '-'}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${valorF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button style="background:var(--green-btn); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;">Puxar Pedido</button></td>`; tr.ondblclick = () => { carrinho = [{ nome: "ORÇAMENTO - " + o.cliente, valor: valorF, total: valorF, qtd: 1 }]; document.getElementById('cliente-nome').value = o.cliente; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-lista-orcamentos').style.display = 'none'; }; tbody.appendChild(tr); }); } catch (e) { tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar orçamentos.</td></tr>"; } }
-    function abrirModalNFCe() { document.getElementById('modal-nfce').style.display = 'flex'; }
+    async function abrirModalProdutos() { 
+        document.getElementById('modal-lista-produtos').style.display = 'flex'; 
+        const tbody = document.querySelector('#tabela-lista-produtos tbody'); 
+        tbody.innerHTML = ""; 
+        
+        if (produtosLista.length === 0) { 
+            tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum produto carregado.</td></tr>"; 
+            return; 
+        } 
+        
+        produtosLista.forEach(p => {
+            const tr = document.createElement('tr'); 
+            tr.innerHTML = `<td style="text-align:left; font-weight: 500;">${p.nome}</td><td style="font-weight:700; color:var(--green-text);">R$ ${p.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="adicionarProdutoPeloModal('${p.nome}')" style="background:var(--blue-header); color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:600;">Adicionar</button></td>`;
+            tbody.appendChild(tr);
+        }); 
+    }
+
+    function adicionarProdutoPeloModal(nomeProd) { 
+        document.getElementById('busca-prod').value = nomeProd; 
+        addItem(); 
+        document.getElementById('modal-lista-produtos').style.display = 'none'; 
+    }
+
+    async function abrirModalClientes() { 
+        document.getElementById('modal-lista-clientes').style.display = 'flex'; 
+        const tbody = document.querySelector('#tabela-lista-clientes tbody'); 
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando clientes no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; 
+        
+        try { 
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarClientes&nocache=${Date.now()}`); 
+            const dados = await res.json(); 
+            tbody.innerHTML = ""; 
+            
+            if(!Array.isArray(dados) || dados.length === 0) { 
+                tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum cliente encontrado.</td></tr>"; 
+                return; 
+            } 
+            
+            dados.forEach(c => { 
+                const tr = document.createElement('tr'); 
+                tr.className = "linha-pendente"; 
+                tr.innerHTML = `<td style="text-align:left; font-weight:600;">${c.nome || '-'}</td><td>${c.telefone || '-'}</td><td>${c.cpf || '-'}</td>`; 
+                tr.ondblclick = () => { 
+                    document.getElementById('cliente-nome').value = c.nome; 
+                    document.getElementById('cliente-cpf').value = c.cpf || 'Não Informado'; 
+                    document.getElementById('modal-lista-clientes').style.display = 'none'; 
+                }; 
+                tbody.appendChild(tr); 
+            }); 
+        } catch (e) { 
+            tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar clientes.</td></tr>"; 
+        } 
+    }
+
+    async function abrirModalOrcamentos() { 
+        document.getElementById('modal-lista-orcamentos').style.display = 'flex'; 
+        const tbody = document.querySelector('#tabela-lista-orcamentos tbody'); 
+        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando orçamentos no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; 
+        
+        try { 
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=cofrinho&nocache=${Date.now()}`); 
+            const dados = await res.json(); 
+            tbody.innerHTML = ""; 
+            
+            if(!Array.isArray(dados) || dados.length === 0) { 
+                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Nenhum orçamento pendente.</td></tr>"; 
+                return; 
+            } 
+            
+            dados.forEach(o => { 
+                const tr = document.createElement('tr'); 
+                const valorF = tratarValor(o.total || o.valor); 
+                tr.innerHTML = `<td style="text-align:left; font-weight:600;">${o.cliente || '-'}</td><td>${o.data || '-'}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${valorF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button style="background:var(--green-btn); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;">Puxar Pedido</button></td>`; 
+                tr.ondblclick = () => { 
+                    carrinho = [{ nome: "ORÇAMENTO - " + o.cliente, valor: valorF, total: valorF, qtd: 1 }]; 
+                    document.getElementById('cliente-nome').value = o.cliente; 
+                    document.getElementById('tipo-venda').value = 'direta'; 
+                    renderTable(); 
+                    document.getElementById('modal-lista-orcamentos').style.display = 'none'; 
+                }; 
+                tbody.appendChild(tr); 
+            }); 
+        } catch (e) { 
+            tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar orçamentos.</td></tr>"; 
+        } 
+    }
+
+    function abrirModalNFCe() { 
+        document.getElementById('modal-nfce').style.display = 'flex'; 
+    }
 </script>
 </body>
 </html>

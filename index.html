@@ -285,6 +285,17 @@
 <div id="modal-lista-orcamentos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-calculator" style="color: var(--blue-header);"></i> Orçamentos Salvos</h3><button onclick="document.getElementById('modal-lista-orcamentos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-orcamentos"><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-nfce" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-invoice-dollar" style="color: var(--blue-header);"></i> Gestão de NFC-e</h3><button onclick="document.getElementById('modal-nfce').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-nfce"><thead><tr><th>Nº Venda</th><th>Cliente</th><th>Valor Total</th><th>Status SEFAZ</th><th>Ação</th></tr></thead><tbody><tr><td colspan="5" style="color: #888; padding: 20px; text-align: center;">Nenhuma nota fiscal pendente de transmissão.</td></tr></tbody></table></div></div>
 
+<!-- TELA DE AUTORIZAÇÃO MASTER -->
+<div id="modal-auth-master" class="modal-overlay">
+    <div class="modal-box-caixa" style="text-align: center;">
+        <h3 style="color: var(--danger); border-bottom: none; margin-bottom: 5px;"><i class="fas fa-user-shield"></i> Liberação Gerencial</h3>
+        <p id="msg-auth-master" style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Ação requer a senha Master.</p>
+        <input type="password" id="senha-master" placeholder="Digite a Senha Master" style="text-align: center; font-weight: bold;">
+        <button onclick="validarSenhaMaster()" style="background: var(--danger);">Autorizar Operação</button>
+        <button onclick="document.getElementById('modal-auth-master').style.display='none'" style="background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border-color); margin-top: 10px;">Cancelar</button>
+    </div>
+</div>
+
 <div id="modal-operacao-caixa" class="modal-overlay">
     <div class="modal-box-caixa">
         <h3 id="titulo-op-caixa">Operação de Caixa</h3>
@@ -292,7 +303,7 @@
         <input type="number" id="valor-op-caixa" placeholder="Valor (R$)" step="0.01">
         <input type="text" id="desc-op-caixa" placeholder="Descrição / Motivo">
         <button onclick="confirmarOperacaoCaixa()" id="btn-op-caixa">Confirmar Lançamento</button>
-        <button onclick="document.getElementById('modal-operacao-caixa').style.display='none'" style="background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border-color); margin-top: 10px;">Cancelar</button>
+        <button id="btn-cancelar-op" onclick="document.getElementById('modal-operacao-caixa').style.display='none'" style="background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border-color); margin-top: 10px;">Cancelar</button>
     </div>
 </div>
 
@@ -409,8 +420,20 @@
     // =========================================================================
     // 1. DEFINA AQUI AS URLs DO SEU GOOGLE APPS SCRIPT (WEB APP)
     // =========================================================================
-    const URL_BASE_1_GERAL = 'https://script.google.com/macros/s/AKfycbzrmJ0cFA-e5vnrThixRZy5-BNQJruVR_Oo0hak1uL1GaOcAVXkqQGQXz0_Gy_qknCPXg/exec'; // Servidor Central
-    const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbzciM5IA25tZ9CcRkwj0-okP5CQ0IG3wpmZeT40vbPGiCtovD3au5Ccgr9jTxcJhSc6/exec"; // Servidor Local
+    const URL_BASE_1_GERAL = "https://script.google.com/macros/s/AKfycbzciM5IA25tZ9CcRkwj0-okP5CQ0IG3wpmZeT40vbPGiCtovD3au5Ccgr9jTxcJhSc6/exec";
+    const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbyRnFjzeYrGvweXMaLABVnWOgL4DHi5AMzBpsvrnVyxVB1dWmwvZZoQ5WuZblzzGx3B-w/exec";
+
+    // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
+    // Defina as senhas e quem é o dono de cada senha.
+    const SENHAS_MASTER = {
+        "admin123": "Diretoria", 
+        "gerente123": "Gerência"
+    }; 
+    
+    let adminAutorizador = ""; 
+    let bloqueioTempoIgnorado = false;
+    let bloqueioQuebraIgnorado = false;
+    let motivoBloqueioAtual = ""; 
 
     let produtosLista = [];
     let carrinho = [];
@@ -424,34 +447,13 @@
     // =========================================================================
     // 2. FUNÇÃO DE IMPRESSÃO (Evita o travamento ao finalizar venda)
     // =========================================================================
-    function imprimirReciboA4(payload) {
-        console.log("Gerando recibo A4 para a venda:", payload.idVenda);
-        // Aqui você pode adicionar sua lógica de impressão de comprovante no futuro
-    }
+    function imprimirReciboA4(payload) { console.log("Gerando recibo A4 para a venda:", payload.idVenda); }
 
-    // Função Integradora Duplo Envio (Roteador de Dados)
     async function enviarDadosServidor(payload) {
-        // CLONE DO PAYLOAD PARA A BASE 1 (GERAL) - BLOQUEANDO A EMISSÃO DE NOTA FISCAL
-        // Isso evita que a Base 1 (configurada para outra loja) emita a NFC-e no CNPJ errado
         let payloadGeral = JSON.parse(JSON.stringify(payload));
-        if (payloadGeral.emitirNotaFiscal !== undefined) {
-            payloadGeral.emitirNotaFiscal = false; // Desativa NF na Base 1
-        }
-
-        // Envia de forma silenciosa para o Banco Geral (Base 1)
-        fetch(URL_BASE_1_GERAL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payloadGeral)
-        }).catch(e => console.error("Falha ao salvar no Servidor Geral", e));
-
-        // Envia o payload ORIGINAL (que emite a NF) para o Banco 2 (Nova Olímpia)
-        const resposta = await fetch(URL_BASE_2_PRINCIPAL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
-        return resposta;
+        if (payloadGeral.emitirNotaFiscal !== undefined) { payloadGeral.emitirNotaFiscal = false; }
+        fetch(URL_BASE_1_GERAL, { method: 'POST', body: JSON.stringify(payloadGeral) }).catch(e => console.error("Falha ao salvar no Servidor Geral", e));
+        return await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payload) });
     }
 
     function toggleMenuCaixa() { document.getElementById("dropdown-caixa").classList.toggle("show-dropdown"); }
@@ -470,37 +472,33 @@
         return parseFloat(str) || 0;
     }
 
-    // =========================================================================
-    // NOVO SISTEMA DE LOGIN REMOTO
-    // =========================================================================
     async function entrarSistema() {
         const user = document.getElementById('login-user').value.trim().toLowerCase();
         const pass = document.getElementById('login-pass').value.trim();
         const msgErro = document.getElementById('login-erro');
         const btn = document.querySelector('.login-box button');
         
-        if (!user || !pass) {
-            mostrarErroLogin("Preencha todos os campos!");
-            return;
-        }
-
+        if (!user || !pass) { mostrarErroLogin("Preencha todos os campos!"); return; }
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Autenticando...";
-        btn.disabled = true;
-        msgErro.style.display = 'none';
+        btn.disabled = true; msgErro.style.display = 'none';
 
         try {
-            // A leitura é feita apenas na Base Principal (Base 2)
-            const resLogin = await fetch(URL_BASE_2_PRINCIPAL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ acao: 'login', usuario: user, senha: pass })
-            });
-            const dataLogin = await resLogin.json();
+            const payloadNovo = { acao: 'login', usuario: user, senha: pass };
+            const payloadLegado = { tipo: 'login_equipe_pdv', usuario: user, senha: pass };
+            const payloadAdmin = { tipo: 'login_adm', usuario: user, senha: pass };
+            let bodyJson = user === 'admin' ? payloadAdmin : payloadNovo;
 
-            if (dataLogin.status === 'sucesso') {
-                const nomeColaborador = dataLogin.nome;
-                document.getElementById('login-user').value = nomeColaborador; // Guarda o nome limpo no input
+            let resLogin = await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(bodyJson) });
+            let dataLogin = await resLogin.json();
 
+            if ((dataLogin.status === 'erro' || dataLogin.status === 'Erro') && user !== 'admin') {
+                resLogin = await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payloadLegado) });
+                dataLogin = await resLogin.json();
+            }
+
+            if (dataLogin.status === 'sucesso' || dataLogin.logado === true) {
+                const nomeColaborador = dataLogin.nome || (user === 'admin' ? "Administrador" : "Consultor");
+                document.getElementById('login-user').value = nomeColaborador; 
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-loading').style.display = 'flex';
                 
@@ -523,247 +521,201 @@
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura'); 
                 }
-            } else {
-                mostrarErroLogin(dataLogin.mensagem || "Credenciais inválidas!");
-            }
-        } catch (error) {
-            mostrarErroLogin("Erro de conexão com o banco de dados.");
-        } finally {
-            btn.innerHTML = "Entrar no Terminal";
-            btn.disabled = false;
-        }
+            } else { mostrarErroLogin(dataLogin.mensagem || "Credenciais inválidas!"); }
+        } catch (error) { mostrarErroLogin("Erro de conexão."); } 
+        finally { btn.innerHTML = "Entrar no Terminal"; btn.disabled = false; }
     }
 
     function mostrarErroLogin(msg) {
-        const msgErro = document.getElementById('login-erro');
-        msgErro.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`;
-        msgErro.style.display = 'block';
-        const box = document.querySelector('.login-box');
-        box.style.transform = 'translateX(-10px)';
-        setTimeout(() => box.style.transform = 'translateX(10px)', 100);
-        setTimeout(() => box.style.transform = 'translateX(0)', 200);
+        const msgErro = document.getElementById('login-erro'); msgErro.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${msg}`; msgErro.style.display = 'block';
+        const box = document.querySelector('.login-box'); box.style.transform = 'translateX(-10px)'; setTimeout(() => box.style.transform = 'translateX(10px)', 100); setTimeout(() => box.style.transform = 'translateX(0)', 200);
     }
-
     document.getElementById("login-pass").addEventListener("keypress", function(e) { if(e.key === "Enter") entrarSistema(); });
 
     async function carregarDados() {
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?nocache=${Date.now()}`);
-            const data = await res.json();
-            produtosLista = data.produtos || [];
-            const dl = document.getElementById('lista-produtos');
-            dl.innerHTML = ""; produtosLista.forEach(p => dl.innerHTML += `<option value="${p.nome}">`);
-            
-            const sel = document.getElementById('vendedor-select');
-            sel.innerHTML = "";
-            (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?nocache=${Date.now()}`); const data = await res.json();
+            produtosLista = data.produtos || []; const dl = document.getElementById('lista-produtos'); dl.innerHTML = ""; produtosLista.forEach(p => dl.innerHTML += `<option value="${p.nome}">`);
+            const sel = document.getElementById('vendedor-select'); sel.innerHTML = ""; (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
         } catch (e) { console.error("Falha", e); }
     }
 
     function abrirModalCaixa(tipo) {
-        document.getElementById("dropdown-caixa").classList.remove("show-dropdown");
-        tipoOperacaoAtual = tipo;
-        const modal = document.getElementById('modal-operacao-caixa');
-        const titulo = document.getElementById('titulo-op-caixa');
-        const desc = document.getElementById('desc-op-caixa');
-        const lblFechamento = document.getElementById('lbl-fechamento-anterior');
-        
-        document.getElementById('valor-op-caixa').value = "";
-        desc.value = "";
-        desc.style.display = "block";
-        lblFechamento.style.display = "none";
+        if (tipo !== 'abertura' && !cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); tipo = 'abertura'; }
+        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); tipoOperacaoAtual = tipo;
+        const modal = document.getElementById('modal-operacao-caixa'); const titulo = document.getElementById('titulo-op-caixa'); const desc = document.getElementById('desc-op-caixa'); const lblFechamento = document.getElementById('lbl-fechamento-anterior'); const btnCancelar = document.getElementById('btn-cancelar-op'); 
+        document.getElementById('valor-op-caixa').value = ""; desc.value = ""; desc.style.display = "block"; lblFechamento.style.display = "none";
 
         if(tipo === 'abertura') {
-            titulo.innerHTML = "<i class='fas fa-lock-open' style='color:var(--blue-header)'></i> Abertura de Caixa";
-            desc.value = "Fundo de Troco Inicial";
-            desc.style.display = "none";
-            lblFechamento.style.display = "block";
-            lblFechamento.innerText = `Dinheiro deixado ontem: R$ ${cxUltimoFechamento.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            document.getElementById('valor-op-caixa').value = cxUltimoFechamento.toFixed(2);
+            titulo.innerHTML = "<i class='fas fa-lock-open' style='color:var(--blue-header)'></i> Abertura de Caixa"; desc.value = "Fundo de Troco Inicial"; desc.style.display = "none"; lblFechamento.style.display = "block";
+            lblFechamento.innerText = `Dinheiro deixado ontem: R$ ${cxUltimoFechamento.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('valor-op-caixa').value = cxUltimoFechamento.toFixed(2); btnCancelar.style.display = "none";
         } else if(tipo === 'sangria') {
-            titulo.innerHTML = "<i class='fas fa-hand-holding-usd' style='color:var(--blue-header)'></i> Registrar Sangria";
-            desc.placeholder = "Motivo da Sangria (Ex: Retirada para malote)";
+            titulo.innerHTML = "<i class='fas fa-hand-holding-usd' style='color:var(--blue-header)'></i> Registrar Sangria"; desc.placeholder = "Motivo da Sangria (Ex: Retirada para malote)"; btnCancelar.style.display = "block"; 
         } else if(tipo === 'despesa') {
-            titulo.innerHTML = "<i class='fas fa-receipt' style='color:var(--blue-header)'></i> Lançar Despesa";
-            desc.placeholder = "Descrição da Despesa (Ex: Compra de material)";
+            titulo.innerHTML = "<i class='fas fa-receipt' style='color:var(--blue-header)'></i> Lançar Despesa"; desc.placeholder = "Descrição da Despesa (Ex: Compra de material)"; btnCancelar.style.display = "block"; 
         }
         modal.style.display = 'flex';
     }
 
     async function confirmarOperacaoCaixa() {
-        const valor = parseFloat(document.getElementById('valor-op-caixa').value);
-        const desc = document.getElementById('desc-op-caixa').value || "Não informada";
-        const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
-        
+        const valor = parseFloat(document.getElementById('valor-op-caixa').value); const desc = document.getElementById('desc-op-caixa').value || "Não informada"; const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         if(!valor || valor <= 0) return alert("Insira um valor válido para prosseguir.");
-
-        let btn = document.getElementById('btn-op-caixa');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando...";
-        btn.disabled = true;
-
+        let btn = document.getElementById('btn-op-caixa'); btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Processando..."; btn.disabled = true;
         try {
             if(tipoOperacaoAtual === 'abertura') {
-                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor };
-                const res = await enviarDadosServidor(payload);
-                const data = await res.json();
-                cxSessao = data.idSessao;
-                cxFundoInicial = valor;
-                imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador);
-            } 
-            else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
-                if(!cxSessao) {
-                    alert("Sessão do caixa não identificada. Recarregue a página e tente novamente.");
-                    btn.innerHTML = "Confirmar Lançamento";
-                    btn.disabled = false;
-                    return;
-                }
-                const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] ";
-                const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
-                await enviarDadosServidor(payloadDespesa);
-                
-                imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
+                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor }; const res = await enviarDadosServidor(payload); const data = await res.json(); cxSessao = data.idSessao; cxFundoInicial = valor; imprimirComprovanteCaixa("ABERTURA DE CAIXA", valor, desc, operador);
+            } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
+                if(!cxSessao) { alert("Sessão do caixa não identificada."); btn.innerHTML = "Confirmar Lançamento"; btn.disabled = false; return; }
+                const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
+                await enviarDadosServidor(payloadDespesa); imprimirComprovanteCaixa(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
             }
             document.getElementById('modal-operacao-caixa').style.display = 'none';
-        } catch(e) {
-            alert("Erro de comunicação com o servidor. A operação pode não ter sido salva.");
-        }
-        
-        btn.innerHTML = "Confirmar Lançamento";
-        btn.disabled = false;
+        } catch(e) { alert("Erro de comunicação com o servidor."); }
+        btn.innerHTML = "Confirmar Lançamento"; btn.disabled = false;
     }
 
     async function abrirModalMovimentacao() {
-        document.getElementById("dropdown-caixa").classList.remove("show-dropdown");
-        document.getElementById('modal-movimentacao').style.display = 'flex';
-        const tbody = document.querySelector('#tabela-movimentacao tbody');
-        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-
+        document.getElementById("dropdown-caixa").classList.remove("show-dropdown"); document.getElementById('modal-movimentacao').style.display = 'flex';
+        const tbody = document.querySelector('#tabela-movimentacao tbody'); tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`);
-            const data = await res.json();
-            
-            tbody.innerHTML = "";
-            if(!data.movimentacoes || data.movimentacoes.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#64748b;'>Nenhuma movimentação no turno atual.</td></tr>";
-                return;
-            }
-
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); const data = await res.json(); tbody.innerHTML = "";
+            if(!data.movimentacoes || data.movimentacoes.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#64748b;'>Nenhuma movimentação no turno atual.</td></tr>"; return; }
             data.movimentacoes.forEach(m => {
-                const tr = document.createElement('tr');
-                const corVal = m.tipo === 'ENTRADA' ? 'var(--green-text)' : 'var(--danger)';
-                tr.innerHTML = `
-                    <td>${m.hora}</td>
-                    <td><b style="color:${corVal}">${m.tipo}</b></td>
-                    <td>${m.desc}</td>
-                    <td style="font-weight:bold; color:${corVal}">R$ ${m.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>
-                `;
-                tbody.appendChild(tr);
+                const tr = document.createElement('tr'); const corVal = m.tipo === 'ENTRADA' ? 'var(--green-text)' : 'var(--danger)'; tr.innerHTML = `<td>${m.hora}</td><td><b style="color:${corVal}">${m.tipo}</b></td><td>${m.desc}</td><td style="font-weight:bold; color:${corVal}">R$ ${m.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`; tbody.appendChild(tr);
             });
-        } catch(e) {
-            tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar movimentação.</td></tr>";
+        } catch(e) { tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar movimentação.</td></tr>"; }
+    }
+
+    function validarSenhaMaster() {
+        const senhaInserida = document.getElementById('senha-master').value;
+        if (SENHAS_MASTER[senhaInserida]) {
+            adminAutorizador = SENHAS_MASTER[senhaInserida]; 
+            document.getElementById('modal-auth-master').style.display = 'none';
+            if (motivoBloqueioAtual === 'horario') { bloqueioTempoIgnorado = true; abrirModalFechamento(); } 
+            else if (motivoBloqueioAtual === 'quebra') { bloqueioQuebraIgnorado = true; confirmarFechamentoDefinitivo(); }
+        } else {
+            alert("Senha Master incorreta!"); document.getElementById('senha-master').value = '';
         }
     }
 
     async function abrirModalFechamento() {
         document.getElementById("dropdown-caixa").classList.remove("show-dropdown");
-        document.getElementById('modal-fechamento').style.display = 'flex';
+        const agora = new Date(); const hora = agora.getHours(); const minuto = agora.getMinutes();
         
-        document.getElementById('fech-informado').value = "";
-        document.getElementById('fech-diferenca').innerText = "Calculando servidor...";
-        document.getElementById('btn-confirma-fechamento').disabled = true;
+        if ((hora < 17 || (hora === 17 && minuto < 50)) && !bloqueioTempoIgnorado) {
+            motivoBloqueioAtual = 'horario'; document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:50 requer a senha Master."; document.getElementById('modal-auth-master').style.display = 'flex'; document.getElementById('senha-master').value = ''; return; 
+        }
+
+        document.getElementById('modal-fechamento').style.display = 'flex'; document.getElementById('fech-informado').value = ""; document.getElementById('fech-diferenca').innerText = "Calculando servidor..."; document.getElementById('btn-confirma-fechamento').disabled = true;
 
         const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
-        
         try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`);
-            cxResumoAtual = await res.json();
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=resumo_caixa&vendedor=${encodeURIComponent(operador)}&idSessao=${cxSessao}&nocache=${Date.now()}`); cxResumoAtual = await res.json();
+            if(cxResumoAtual.status === "Erro" || cxResumoAtual.erro) { alert("⚠️ O servidor não reconheceu o comando."); document.getElementById('fech-diferenca').innerText = "Erro do Servidor."; return; }
+            const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0); const saldoEsperado = cxFundoInicial + (cxResumoAtual.vendasDinheiro || 0) - saidas;
             
-            if(cxResumoAtual.status === "Erro" || cxResumoAtual.erro) {
-                alert("⚠️ ATENÇÃO: O servidor não reconheceu o comando. Verifique o banco de dados.");
-                document.getElementById('fech-diferenca').innerText = "Erro do Servidor.";
-                return;
-            }
-
-            const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
-            const saldoEsperado = cxFundoInicial + (cxResumoAtual.vendasDinheiro || 0) - saidas;
-            
-            document.getElementById('fech-fundo').innerText = `R$ ${cxFundoInicial.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            document.getElementById('fech-entradas').innerText = `R$ ${(cxResumoAtual.vendasDinheiro || 0).toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            document.getElementById('fech-saidas').innerText = `R$ ${saidas.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            document.getElementById('fech-esperado').innerText = `R$ ${saldoEsperado.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
-            
-            document.getElementById('fech-esperado').dataset.valor = saldoEsperado; 
-            document.getElementById('fech-diferenca').innerText = "Informe o valor em gaveta acima";
-            document.getElementById('btn-confirma-fechamento').disabled = false;
-        } catch (e) {
-            document.getElementById('fech-diferenca').innerText = "Erro ao buscar dados do servidor.";
-        }
+            document.getElementById('fech-fundo').innerText = `R$ ${cxFundoInicial.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-entradas').innerText = `R$ ${(cxResumoAtual.vendasDinheiro || 0).toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-saidas').innerText = `R$ ${saidas.toLocaleString('pt-br', {minimumFractionDigits: 2})}`; document.getElementById('fech-esperado').innerText = `R$ ${saldoEsperado.toLocaleString('pt-br', {minimumFractionDigits: 2})}`;
+            document.getElementById('fech-esperado').dataset.valor = saldoEsperado; document.getElementById('fech-diferenca').innerText = "Informe o valor em gaveta acima"; document.getElementById('btn-confirma-fechamento').disabled = false;
+        } catch (e) { document.getElementById('fech-diferenca').innerText = "Erro ao buscar dados do servidor."; }
     }
 
     function calcularQuebraFechamento() {
-        const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0;
-        const informado = parseFloat(document.getElementById('fech-informado').value) || 0;
-        const diferenca = informado - esperado;
-        
-        const divDif = document.getElementById('fech-diferenca');
-        if (diferenca === 0) {
-            divDif.innerText = "Diferença: R$ 0,00 (Caixa Batendo ✔️)";
-            divDif.style.color = "var(--green-text)";
-        } else if (diferenca > 0) {
-            divDif.innerText = `Diferença: + R$ ${diferenca.toLocaleString('pt-br', {minimumFractionDigits: 2})} (Sobra em Caixa)`;
-            divDif.style.color = "var(--blue-header)";
-        } else {
-            divDif.innerText = `Diferença: - R$ ${Math.abs(diferenca).toLocaleString('pt-br', {minimumFractionDigits: 2})} (Falta em Caixa ⚠️)`;
-            divDif.style.color = "var(--danger)";
-        }
+        const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0; const informado = parseFloat(document.getElementById('fech-informado').value) || 0; const diferenca = informado - esperado; const divDif = document.getElementById('fech-diferenca');
+        if (diferenca === 0) { divDif.innerText = "Diferença: R$ 0,00 (Caixa Batendo ✔️)"; divDif.style.color = "var(--green-text)"; } else if (diferenca > 0) { divDif.innerText = `Diferença: + R$ ${diferenca.toLocaleString('pt-br', {minimumFractionDigits: 2})} (Sobra em Caixa)`; divDif.style.color = "var(--blue-header)"; } else { divDif.innerText = `Diferença: - R$ ${Math.abs(diferenca).toLocaleString('pt-br', {minimumFractionDigits: 2})} (Falta em Caixa ⚠️)`; divDif.style.color = "var(--danger)"; }
     }
 
     async function confirmarFechamentoDefinitivo() {
         const informado = parseFloat(document.getElementById('fech-informado').value);
         if(isNaN(informado)) return alert("Digite o valor exato contado na gaveta de dinheiro.");
-        
         const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0;
         const quebra = informado - esperado;
-        const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
+        
+        if (quebra < 0 && !bloqueioQuebraIgnorado) {
+            motivoBloqueioAtual = 'quebra';
+            document.getElementById('msg-auth-master').innerText = `O caixa apresenta falta de R$ ${Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2})}. Esta operação requer a senha Master para gerar o Vale.`;
+            document.getElementById('modal-auth-master').style.display = 'flex'; document.getElementById('senha-master').value = ''; return; 
+        }
 
+        const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
         const btn = document.getElementById('btn-confirma-fechamento');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno...";
-        btn.disabled = true;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Finalizando Turno..."; btn.disabled = true;
 
         const payload = {
-            tipo: 'fechar_caixa',
-            idSessao: cxSessao,
-            detalhes: {
-                dinheiro: informado,
-                pix: cxResumoAtual.vendasOutros || 0, 
-                debito: 0, credito: 0, boleto: 0, bonuscred: 0,
-                quebra: quebra,
-                gerente: operador
-            }
+            tipo: 'fechar_caixa', idSessao: cxSessao,
+            detalhes: { dinheiro: informado, pix: cxResumoAtual.vendasOutros || 0, debito: 0, credito: 0, boleto: 0, bonuscred: 0, quebra: quebra, gerente: operador, autorizador: adminAutorizador || "Não exigido" }
         };
 
         try {
             await enviarDadosServidor(payload);
-            imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador);
-            alert("Turno encerrado. O sistema será reiniciado.");
-            location.reload();
-        } catch(e) {
-            alert("Erro ao fechar o caixa no servidor.");
-            btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório";
-            btn.disabled = false;
-        }
+            imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAutorizador);
+            
+            // Se houve quebra negativa (falta de dinheiro no caixa), imprime o cupom extra do Vale
+            if (quebra < 0) {
+                setTimeout(() => { imprimirValeFuncionario(quebra, operador, adminAutorizador); }, 800);
+            }
+            
+            alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
+            cxSessao = ""; carrinho = []; location.reload(); 
+        } catch(e) { alert("Erro ao fechar o caixa no servidor."); btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; btn.disabled = false; }
     }
 
-    function imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador) {
+    // --- NOVA FUNÇÃO PARA IMPRIMIR O VALE (QUEBRA DE CAIXA) ---
+    function imprimirValeFuncionario(quebra, operador, adminAuth) {
+        const janela = window.open('', '_blank');
+        const dataAtual = new Date().toLocaleString('pt-BR');
+        const valorFalta = Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2});
+
+        const templateHtml = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8"><title>Vale Quebra de Caixa</title>
+            <style>
+                @page { size: 80mm 200mm; margin: 5mm; } 
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; margin: 0; padding: 0; width: 70mm; font-size: 12px; } 
+                .cabecalho { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; } 
+                .cabecalho h2 { margin: 0; font-size: 15px; font-weight: 900;} 
+                .cabecalho p { margin: 2px 0; font-size: 11px; font-weight: bold; } 
+                .info { margin-bottom: 10px; } 
+                .info p { margin: 4px 0; } 
+                .valor { text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; border: 1px dashed #000; padding: 10px; } 
+                .texto-termo { font-size: 10px; text-align: justify; margin-bottom: 20px; line-height: 1.4; }
+                .assinatura { margin-top: 30px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px; margin-bottom: 10px;}
+            </style>
+        </head>
+        <body>
+            <div class="cabecalho"><h2>ÓTICAS AMMO NOVA OLÍMPIA</h2><p>VALE - QUEBRA DE CAIXA</p></div>
+            <div class="info">
+                <p><strong>Data/Hora:</strong> ${dataAtual}</p>
+                <p><strong>Sessão:</strong> ${cxSessao}</p>
+                <p><strong>Operador(a):</strong> ${operador}</p>
+                <p><strong>Autorizador:</strong> ${adminAuth || 'Não informado'}</p>
+            </div>
+            
+            <div class="valor">R$ ${valorFalta}</div>
+            
+            <p class="texto-termo">Reconheço a falta do valor especificado acima no fechamento do meu caixa, referente à data de ${dataAtual.split(' ')[0]}. Estou ciente de que este valor poderá ser descontado dos meus vencimentos, conforme as normas da empresa.</p>
+            
+            <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Operador(a)</div>
+            <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Gerente/Autorizador</div>
+            
+            <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
+        </body>
+        </html>`;
+        janela.document.write(templateHtml);
+        janela.document.close();
+    }
+
+    function imprimirRelatorioFechamentoPDF(informado, esperado, quebra, operador, adminAuth) {
         const janela = window.open('', '_blank');
         const dataAtual = new Date().toLocaleString('pt-BR');
         const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
-        
         let movHtml = "";
-        cxResumoAtual.movimentacoes.forEach(m => {
-            movHtml += `<tr><td style="font-size:10px;">${m.hora}</td><td style="font-size:10px;">${m.tipo}</td><td style="font-size:10px;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right;">R$ ${m.valor.toFixed(2)}</td></tr>`;
-        });
+        cxResumoAtual.movimentacoes.forEach(m => { movHtml += `<tr><td style="font-size:10px;">${m.hora}</td><td style="font-size:10px;">${m.tipo}</td><td style="font-size:10px;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right;">R$ ${m.valor.toFixed(2)}</td></tr>`; });
+
+        let linhaAutorizacao = '';
+        if (adminAuth) { linhaAutorizacao = `<hr style="border:0; border-top:1px dashed #000; margin:5px 0;"><div class="linha" style="font-weight:bold;"><span>Autorizado por:</span> <span>${adminAuth}</span></div>`; }
 
         const templateHtml = `
         <!DOCTYPE html>
@@ -783,16 +735,8 @@
             </style>
         </head>
         <body>
-            <div class="cabecalho">
-                <h2>ÓTICAS AMMO NOVA OLÍMPIA</h2>
-                <p>RELATÓRIO Z - FECHAMENTO DE CAIXA</p>
-            </div>
-            <div class="info">
-                <p><strong>Sessão:</strong> ${cxSessao}</p>
-                <p><strong>Data/Hora:</strong> ${dataAtual}</p>
-                <p><strong>Operador:</strong> ${operador}</p>
-            </div>
-            
+            <div class="cabecalho"><h2>ÓTICAS AMMO NOVA OLÍMPIA</h2><p>RELATÓRIO Z - FECHAMENTO DE CAIXA</p></div>
+            <div class="info"><p><strong>Sessão:</strong> ${cxSessao}</p><p><strong>Data/Hora:</strong> ${dataAtual}</p><p><strong>Operador:</strong> ${operador}</p></div>
             <div class="resumo">
                 <div class="linha"><span>Fundo Inicial:</span> <span>R$ ${cxFundoInicial.toFixed(2)}</span></div>
                 <div class="linha"><span>Vendas Dinheiro:</span> <span>(+) R$ ${(cxResumoAtual.vendasDinheiro || 0).toFixed(2)}</span></div>
@@ -801,22 +745,15 @@
                 <div class="linha" style="font-weight:bold;"><span>Saldo Esperado:</span> <span>R$ ${esperado.toFixed(2)}</span></div>
                 <div class="linha" style="font-weight:bold;"><span>Valor Informado:</span> <span>R$ ${informado.toFixed(2)}</span></div>
                 <div class="linha"><span>Diferença (Quebra):</span> <span>R$ ${quebra.toFixed(2)}</span></div>
+                ${linhaAutorizacao}
             </div>
-
             <p style="text-align:center; font-weight:bold; margin-top:15px; border-bottom:1px dashed #000;">EXTRATO DE MOVIMENTAÇÃO</p>
-            <table>
-                <thead><tr><th>Hora</th><th>Tipo</th><th>Desc.</th><th style="text-align:right;">Valor</th></tr></thead>
-                <tbody>${movHtml}</tbody>
-            </table>
-            
-            <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">
-                Assinatura do Operador/Gerente
-            </div>
+            <table><thead><tr><th>Hora</th><th>Tipo</th><th>Desc.</th><th style="text-align:right;">Valor</th></tr></thead><tbody>${movHtml}</tbody></table>
+            <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">Assinatura do Operador/Gerente</div>
             <script>window.onload = function() { setTimeout(() => window.print(), 800); }<\/script>
         </body>
         </html>`;
-        janela.document.write(templateHtml);
-        janela.document.close();
+        janela.document.write(templateHtml); janela.document.close();
     }
 
     function imprimirComprovanteCaixa(tipo, valor, desc, operador) {
@@ -847,350 +784,74 @@
             <script>window.onload = function() { setTimeout(() => window.print(), 500); }<\/script>
         </body>
         </html>`;
-        janela.document.write(templateHtml);
-        janela.document.close();
+        janela.document.write(templateHtml); janela.document.close();
     }
 
-    function recarregarParametros() {
-        document.getElementById('tela-loading').style.display = 'flex';
-        carregarDados().then(() => {
-            setTimeout(() => { document.getElementById('tela-loading').style.display = 'none'; }, 1500);
-        });
-    }
-
-    function filtrarCarrinho() {
-        const input = document.getElementById("input-filtro-tabela").value.toUpperCase();
-        const trs = document.querySelectorAll("#tabela-venda tbody tr");
-        trs.forEach(tr => {
-            const nomeProduto = tr.cells[0].textContent.toUpperCase();
-            tr.style.display = nomeProduto.includes(input) ? "" : "none";
-        });
-    }
-
-    function resetarPDV() {
-        carrinho = [];
-        renderTable();
-        document.getElementById('cliente-nome').value = "Venda ao consumidor";
-        document.getElementById('cliente-cpf').value = "Não Informado";
-        document.getElementById('tipo-venda').value = "direta";
-        
-        document.querySelectorAll('.in-pag').forEach(inp => inp.value = "");
-        document.getElementById('v-desconto').value = "";
-        document.getElementById('v-acrescimo').value = "";
-        document.getElementById('v-cred-parcelas').value = "1";
-        document.getElementById('chk-pag-parcial').checked = false;
-        
-        fecharTelaPagamento();
-        const btn = document.getElementById('btn-confirma-fim');
-        btn.disabled = false;
-        btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda";
-    }
+    function recarregarParametros() { document.getElementById('tela-loading').style.display = 'flex'; carregarDados().then(() => { setTimeout(() => { document.getElementById('tela-loading').style.display = 'none'; }, 1500); }); }
+    function filtrarCarrinho() { const input = document.getElementById("input-filtro-tabela").value.toUpperCase(); const trs = document.querySelectorAll("#tabela-venda tbody tr"); trs.forEach(tr => { const nomeProduto = tr.cells[0].textContent.toUpperCase(); tr.style.display = nomeProduto.includes(input) ? "" : "none"; }); }
+    function resetarPDV() { carrinho = []; renderTable(); document.getElementById('cliente-nome').value = "Venda ao consumidor"; document.getElementById('cliente-cpf').value = "Não Informado"; document.getElementById('tipo-venda').value = "direta"; document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); document.getElementById('v-desconto').value = ""; document.getElementById('v-acrescimo').value = ""; document.getElementById('v-cred-parcelas').value = "1"; document.getElementById('chk-pag-parcial').checked = false; fecharTelaPagamento(); const btn = document.getElementById('btn-confirma-fim'); btn.disabled = false; btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; }
 
     async function verificarTipoVenda(valor) { 
+        if (!cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); document.getElementById('tipo-venda').value = 'direta'; abrirModalCaixa('abertura'); return; }
         if (valor === 'parcial') {
-            document.getElementById('modal-parciais').style.display = 'flex';
-            const tbody = document.querySelector('#tabela-parciais tbody');
-            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-            
+            document.getElementById('modal-parciais').style.display = 'flex'; const tbody = document.querySelector('#tabela-parciais tbody'); tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
             try {
-                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarParciais&nocache=${Date.now()}`);
-                const dados = await res.json();
-                tbody.innerHTML = "";
-                if(!Array.isArray(dados) || dados.length === 0) { 
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; 
-                    return; 
-                }
-                
+                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarParciais&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = "";
+                if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; return; }
                 dados.forEach(p => {
-                    const tr = document.createElement('tr');
-                    tr.className = "linha-pendente";
-                    const totalF = tratarValor(p.total);
-                    const saldoF = tratarValor(p.saldo);
+                    const tr = document.createElement('tr'); tr.className = "linha-pendente"; const totalF = tratarValor(p.total); const saldoF = tratarValor(p.saldo);
                     tr.innerHTML = `<td>${p.data||"-"}</td><td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="font-weight:600;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="color:var(--danger); font-weight:700;">R$ ${saldoF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
-                    
-                    tr.ondblclick = () => {
-                        const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO";
-                        carrinho = [{ nome: "PGTO SALDO PARCIAL - " + p.cliente, valor: saldoF, total: saldoF, qtd: 1, idOriginal: idBaixa }];
-                        document.getElementById('cliente-nome').value = p.cliente;
-                        document.getElementById('vendedor-select').value = p.vendedor;
-                        document.getElementById('tipo-venda').value = 'direta'; 
-                        renderTable();
-                        document.getElementById('modal-parciais').style.display = 'none';
-                    };
+                    tr.ondblclick = () => { const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; carrinho = [{ nome: "PGTO SALDO PARCIAL - " + p.cliente, valor: saldoF, total: saldoF, qtd: 1, idOriginal: idBaixa }]; document.getElementById('cliente-nome').value = p.cliente; document.getElementById('vendedor-select').value = p.vendedor; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-parciais').style.display = 'none'; };
                     tbody.appendChild(tr);
                 });
-            } catch (e) { 
-                tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; 
-            }
+            } catch (e) { tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; }
         }
-
         if (valor === 'agrupada') {
-            document.getElementById('modal-agrupada').style.display = 'flex';
-            const tbody = document.querySelector('#tabela-agrupada tbody');
-            tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando pedidos... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-            
+            document.getElementById('modal-agrupada').style.display = 'flex'; const tbody = document.querySelector('#tabela-agrupada tbody'); tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando pedidos... <i class='fas fa-spinner fa-spin'></i></td></tr>";
             try {
-                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarAgrupados&nocache=${Date.now()}`);
-                const dados = await res.json();
-                tbody.innerHTML = "";
-                if(!Array.isArray(dados) || dados.length === 0) { 
-                    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#64748b;'>Nenhum pedido pendente.</td></tr>"; 
-                    return; 
-                }
-                
+                const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarAgrupados&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = "";
+                if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#64748b;'>Nenhum pedido pendente.</td></tr>"; return; }
                 dados.forEach(p => {
-                    const tr = document.createElement('tr');
-                    tr.className = "linha-pendente";
-                    let totalF = tratarValor(p.total);
-                    let rawStr = String(p.total);
-                    if (!rawStr.includes(',') && !rawStr.includes('.') && totalF > 0) { totalF = totalF / 100; }
+                    const tr = document.createElement('tr'); tr.className = "linha-pendente"; let totalF = tratarValor(p.total); let rawStr = String(p.total); if (!rawStr.includes(',') && !rawStr.includes('.') && totalF > 0) { totalF = totalF / 100; }
                     tr.innerHTML = `<td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
-                    
-                    tr.ondblclick = () => {
-                        const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO";
-                        carrinho = [{ nome: "PGTO PEDIDO - " + p.cliente, valor: totalF, total: totalF, qtd: 1, idOriginal: idBaixa }];
-                        document.getElementById('cliente-nome').value = p.cliente;
-                        document.getElementById('vendedor-select').value = p.vendedor;
-                        document.getElementById('tipo-venda').value = 'direta'; 
-                        renderTable();
-                        document.getElementById('modal-agrupada').style.display = 'none';
-                    };
+                    tr.ondblclick = () => { const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; carrinho = [{ nome: "PGTO PEDIDO - " + p.cliente, valor: totalF, total: totalF, qtd: 1, idOriginal: idBaixa }]; document.getElementById('cliente-nome').value = p.cliente; document.getElementById('vendedor-select').value = p.vendedor; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-agrupada').style.display = 'none'; };
                     tbody.appendChild(tr);
                 });
-            } catch (e) { 
-                tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar pedidos agrupados.</td></tr>"; 
-            }
+            } catch (e) { tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar pedidos agrupados.</td></tr>"; }
         }
     }
 
-    function addItem() {
-        const nome = document.getElementById('busca-prod').value;
-        const qtdInput = parseInt(document.getElementById('qtd').value) || 1;
-        const p = produtosLista.find(x => x.nome === nome);
-        if(!p) return alert("Produto não encontrado na lista.");
-        carrinho.push({ nome: p.nome, valor: p.valor, total: p.valor * qtdInput, qtd: qtdInput });
-        renderTable();
-        document.getElementById('busca-prod').value = "";
-        document.getElementById('qtd').value = "1";
-    }
-
-    function limparCarrinho() {
-        carrinho = [];
-        renderTable();
-        document.getElementById('cliente-nome').value = "Venda ao consumidor";
-        document.getElementById('cliente-cpf').value = "Não Informado";
-    }
-
-    function renderTable() {
-        const tbody = document.querySelector('#tabela-venda tbody');
-        tbody.innerHTML = "";
-        let total = 0;
-        carrinho.forEach((item, i) => {
-            total += item.total;
-            tbody.innerHTML += `<tr><td style="font-weight:500;">${item.nome}</td><td>${item.qtd}</td><td>R$ ${item.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="font-weight:600;">R$ ${item.total.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="carrinho.splice(${i},1);renderTable();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;"><i class="fas fa-trash"></i></button></td></tr>`;
-        });
-        document.getElementById('total-venda').innerText = total.toLocaleString('pt-br', {minimumFractionDigits: 2});
-    }
-
+    function addItem() { if (!cxSessao) { alert("Atenção! O caixa está fechado. Realize a abertura para poder lançar itens."); abrirModalCaixa('abertura'); return; } const nome = document.getElementById('busca-prod').value; const qtdInput = parseInt(document.getElementById('qtd').value) || 1; const p = produtosLista.find(x => x.nome === nome); if(!p) return alert("Produto não encontrado na lista."); carrinho.push({ nome: p.nome, valor: p.valor, total: p.valor * qtdInput, qtd: qtdInput }); renderTable(); document.getElementById('busca-prod').value = ""; document.getElementById('qtd').value = "1"; }
+    function limparCarrinho() { carrinho = []; renderTable(); document.getElementById('cliente-nome').value = "Venda ao consumidor"; document.getElementById('cliente-cpf').value = "Não Informado"; }
+    function renderTable() { const tbody = document.querySelector('#tabela-venda tbody'); tbody.innerHTML = ""; let total = 0; carrinho.forEach((item, i) => { total += item.total; tbody.innerHTML += `<tr><td style="font-weight:500;">${item.nome}</td><td>${item.qtd}</td><td>R$ ${item.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="font-weight:600;">R$ ${item.total.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="carrinho.splice(${i},1);renderTable();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;"><i class="fas fa-trash"></i></button></td></tr>`; }); document.getElementById('total-venda').innerText = total.toLocaleString('pt-br', {minimumFractionDigits: 2}); }
     function getSubtotalCarrinho() { return carrinho.reduce((a,b) => a + (b.total || 0), 0); }
-
-    function abrirTelaPagamento() {
-        if(carrinho.length === 0) return alert("Carrinho vazio. Insira itens ou puxe um pedido pendente.");
-        
-        const nomeCliente = document.getElementById('cliente-nome').value.trim();
-        if (nomeCliente === "") { document.getElementById('cliente-nome').value = "Venda ao consumidor"; }
-
-        document.querySelectorAll('.in-pag').forEach(inp => inp.value = "");
-        document.getElementById('v-desconto').value = "";
-        document.getElementById('v-acrescimo').value = "";
-        document.getElementById('v-cred-parcelas').value = "1";
-        document.getElementById('chk-pag-parcial').checked = false;
-
-        document.getElementById('mp-lbl-cliente').innerText = document.getElementById('cliente-nome').value;
-        document.getElementById('lbl-mp-subtotal').innerText = getSubtotalCarrinho().toLocaleString('pt-br', {minimumFractionDigits: 2});
-        
-        document.getElementById('modal-pagamento').style.display = 'flex';
-        calcularCaixa();
-    }
-
+    function abrirTelaPagamento() { if (!cxSessao) { alert("Caixa Fechado! Abra o caixa para realizar recebimentos."); abrirModalCaixa('abertura'); return; } if(carrinho.length === 0) return alert("Carrinho vazio. Insira itens ou puxe um pedido pendente."); const nomeCliente = document.getElementById('cliente-nome').value.trim(); if (nomeCliente === "") { document.getElementById('cliente-nome').value = "Venda ao consumidor"; } document.querySelectorAll('.in-pag').forEach(inp => inp.value = ""); document.getElementById('v-desconto').value = ""; document.getElementById('v-acrescimo').value = ""; document.getElementById('v-cred-parcelas').value = "1"; document.getElementById('chk-pag-parcial').checked = false; document.getElementById('mp-lbl-cliente').innerText = document.getElementById('cliente-nome').value; document.getElementById('lbl-mp-subtotal').innerText = getSubtotalCarrinho().toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('modal-pagamento').style.display = 'flex'; calcularCaixa(); }
     function fecharTelaPagamento() { document.getElementById('modal-pagamento').style.display = 'none'; }
-
-    function calcularCaixa() {
-        const subtotal = getSubtotalCarrinho();
-        const desconto = parseFloat(document.getElementById('v-desconto').value) || 0;
-        const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0;
-        const totalVendaFinal = (subtotal - desconto) + acrescimo;
-
-        let totalPago = 0;
-        document.querySelectorAll('.in-pag').forEach(inp => { totalPago += (parseFloat(inp.value) || 0); });
-        
-        let falta = totalVendaFinal - totalPago;
-        let troco = 0;
-        if (falta < 0) { troco = Math.abs(falta); falta = 0; }
-
-        document.getElementById('txt-total-venda').innerText = totalVendaFinal.toLocaleString('pt-br', {minimumFractionDigits: 2});
-        document.getElementById('txt-total-pago').innerText = totalPago.toLocaleString('pt-br', {minimumFractionDigits: 2});
-        document.getElementById('txt-falta-pagar').innerText = falta.toLocaleString('pt-br', {minimumFractionDigits: 2});
-        document.getElementById('txt-troco').innerText = troco.toLocaleString('pt-br', {minimumFractionDigits: 2});
-    }
-
+    function calcularCaixa() { const subtotal = getSubtotalCarrinho(); const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; const totalVendaFinal = (subtotal - desconto) + acrescimo; let totalPago = 0; document.querySelectorAll('.in-pag').forEach(inp => { totalPago += (parseFloat(inp.value) || 0); }); let falta = totalVendaFinal - totalPago; let troco = 0; if (falta < 0) { troco = Math.abs(falta); falta = 0; } document.getElementById('txt-total-venda').innerText = totalVendaFinal.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-total-pago').innerText = totalPago.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-falta-pagar').innerText = falta.toLocaleString('pt-br', {minimumFractionDigits: 2}); document.getElementById('txt-troco').innerText = troco.toLocaleString('pt-br', {minimumFractionDigits: 2}); }
+    
     async function confirmarVendaFechada() {
-        const nomeClienteValidacao = document.getElementById('cliente-nome').value.trim();
-        if (nomeClienteValidacao === "" || nomeClienteValidacao.toUpperCase() === "VENDA AO CONSUMIDOR") {
-            return alert("Erro: Cliente não informado. Feche esta tela e informe o cliente.");
-        }
+        const nomeClienteValidacao = document.getElementById('cliente-nome').value.trim(); if (nomeClienteValidacao === "" || nomeClienteValidacao.toUpperCase() === "VENDA AO CONSUMIDOR") { return alert("Erro: Cliente não informado. Feche esta tela e informe o cliente."); }
+        const subtotal = getSubtotalCarrinho(); const desconto = parseFloat(document.getElementById('v-desconto').value) || 0; const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0; const totalVendaFinal = (subtotal - desconto) + acrescimo;
+        let totalPago = 0; let metodosUsados = []; const camposPagamento = [ { id: 'v-deb-maestro', nome: 'Débito Maestro' }, { id: 'v-deb-master', nome: 'Débito Master' }, { id: 'v-deb-visa', nome: 'Débito Visa' }, { id: 'v-cred-master', nome: 'Crédito Master' }, { id: 'v-cred-visa', nome: 'Crédito Visa' }, { id: 'v-cred-outros', nome: 'Crédito Elo/Outros' }, { id: 'v-out-din', nome: 'Dinheiro' }, { id: 'v-out-pix', nome: 'PIX' }, { id: 'v-out-boleto', nome: 'Boleto' }, { id: 'v-out-bonuscred', nome: 'Bonuscred' }, { id: 'v-out-cred', nome: 'Crediário' } ];
+        camposPagamento.forEach(campo => { const val = parseFloat(document.getElementById(campo.id).value) || 0; if(val > 0) { totalPago += val; metodosUsados.push(campo.nome); } });
+        const isParcialPermitido = document.getElementById('chk-pag-parcial').checked; const emitirNF = document.getElementById('chk-imprimir-nfce').checked; const imprimirA4 = document.getElementById('chk-imprimir-recibo').checked;
+        if (totalPago === 0 && !isParcialPermitido) { return alert("Insira o valor nos campos de pagamento para prosseguir."); } let falta = totalVendaFinal - totalPago; if (falta > 0.01 && !isParcialPermitido) { return alert(`Falta pagar R$ ${falta.toLocaleString('pt-br', {minimumFractionDigits: 2})}. Marque a opção 'Pagamento parcial' se quiser gerar a dívida.`); }
+        const parcelasNum = document.getElementById('v-cred-parcelas').value; const stringPagamento = metodosUsados.join(" + ") || "Sinal / A Prazo"; let idPedidoOriginal = "NOVO"; let tipoOrigem = "venda_direta"; 
+        if (carrinho.length > 0 && carrinho[0].idOriginal) { idPedidoOriginal = carrinho[0].idOriginal; if (carrinho[0].nome.includes("PGTO PEDIDO")) { tipoOrigem = "baixa_agrupado"; } else if (carrinho[0].nome.includes("PGTO SALDO")) { tipoOrigem = "baixa_parcial"; } }
 
-        const subtotal = getSubtotalCarrinho();
-        const desconto = parseFloat(document.getElementById('v-desconto').value) || 0;
-        const acrescimo = parseFloat(document.getElementById('v-acrescimo').value) || 0;
-        const totalVendaFinal = (subtotal - desconto) + acrescimo;
-
-        let totalPago = 0;
-        let metodosUsados = [];
-        const camposPagamento = [
-            { id: 'v-deb-maestro', nome: 'Débito Maestro' }, { id: 'v-deb-master', nome: 'Débito Master' }, { id: 'v-deb-visa', nome: 'Débito Visa' },
-            { id: 'v-cred-master', nome: 'Crédito Master' }, { id: 'v-cred-visa', nome: 'Crédito Visa' }, { id: 'v-cred-outros', nome: 'Crédito Elo/Outros' },
-            { id: 'v-out-din', nome: 'Dinheiro' }, { id: 'v-out-pix', nome: 'PIX' }, { id: 'v-out-boleto', nome: 'Boleto' },
-            { id: 'v-out-bonuscred', nome: 'Bonuscred' }, { id: 'v-out-cred', nome: 'Crediário' }
-        ];
-
-        camposPagamento.forEach(campo => {
-            const val = parseFloat(document.getElementById(campo.id).value) || 0;
-            if(val > 0) { totalPago += val; metodosUsados.push(campo.nome); }
-        });
-
-        const isParcialPermitido = document.getElementById('chk-pag-parcial').checked;
-        const emitirNF = document.getElementById('chk-imprimir-nfce').checked; 
-        const imprimirA4 = document.getElementById('chk-imprimir-recibo').checked;
-
-        if (totalPago === 0 && !isParcialPermitido) { return alert("Insira o valor nos campos de pagamento para prosseguir."); }
-
-        let falta = totalVendaFinal - totalPago;
-        if (falta > 0.01 && !isParcialPermitido) {
-            return alert(`Falta pagar R$ ${falta.toLocaleString('pt-br', {minimumFractionDigits: 2})}. Marque a opção 'Pagamento parcial' se quiser gerar a dívida.`);
-        }
-
-        const parcelasNum = document.getElementById('v-cred-parcelas').value;
-        const stringPagamento = metodosUsados.join(" + ") || "Sinal / A Prazo";
-
-        let idPedidoOriginal = "NOVO";
-        let tipoOrigem = "venda_direta"; 
-
-        if (carrinho.length > 0 && carrinho[0].idOriginal) {
-            idPedidoOriginal = carrinho[0].idOriginal;
-            if (carrinho[0].nome.includes("PGTO PEDIDO")) { tipoOrigem = "baixa_agrupado"; } 
-            else if (carrinho[0].nome.includes("PGTO SALDO")) { tipoOrigem = "baixa_parcial"; }
-        }
-
-        const payload = { 
-            tipo: "venda",
-            origem: tipoOrigem,              
-            idOriginal: idPedidoOriginal,   
-            vendedor: document.getElementById('vendedor-select').value, 
-            nomeCliente: document.getElementById('cliente-nome').value, 
-            telefone: "Não Informado", 
-            cpf: document.getElementById('cliente-cpf').value, 
-            itens: carrinho, 
-            subtotal: subtotal, desconto: desconto, acrescimo: acrescimo,
-            valorTotal: totalVendaFinal, 
-            valorPago: totalPago,            
-            saldoDevedor: (isParcialPermitido && falta > 0) ? falta : 0, 
-            formaPagamento: stringPagamento, 
-            condicao: (isParcialPermitido && falta > 0) ? "Parcial" : "A Vista", 
-            parcelas: parcelasNum + "x",
-            idVenda: "AMMO-" + Date.now(),
-            emitirNotaFiscal: emitirNF 
-        };
-
-        const btn = document.getElementById('btn-confirma-fim');
-        btn.disabled = true;
-        btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Finalizando...";
+        const payload = { tipo: "venda", origem: tipoOrigem, idOriginal: idPedidoOriginal, vendedor: document.getElementById('vendedor-select').value, nomeCliente: document.getElementById('cliente-nome').value, telefone: "Não Informado", cpf: document.getElementById('cliente-cpf').value, itens: carrinho, subtotal: subtotal, desconto: desconto, acrescimo: acrescimo, valorTotal: totalVendaFinal, valorPago: totalPago, saldoDevedor: (isParcialPermitido && falta > 0) ? falta : 0, formaPagamento: stringPagamento, condicao: (isParcialPermitido && falta > 0) ? "Parcial" : "A Vista", parcelas: parcelasNum + "x", idVenda: "AMMO-" + Date.now(), emitirNotaFiscal: emitirNF };
+        const btn = document.getElementById('btn-confirma-fim'); btn.disabled = true; btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Finalizando...";
 
         try {
-            if(imprimirA4) { imprimirReciboA4(payload); }
-
-            const resposta = await enviarDadosServidor(payload);
-            const dadosResposta = await resposta.json();
-            
-            if(emitirNF) {
-                if(dadosResposta.link_danfe) {
-                    alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela.");
-                    window.open(dadosResposta.link_danfe, '_blank');
-                } else if (dadosResposta.alerta_nfe) {
-                    alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe);
-                } else {
-                    alert(dadosResposta.mensagem || "A nota está sendo processada pela SEFAZ.");
-                }
-            } else {
-                alert("Operação registrada no servidor com sucesso!");
-            }
-            
-            setTimeout(() => { resetarPDV(); }, 1500);
-            
-        } catch (erro) {
-            console.error(erro);
-            alert("Erro na comunicação com o servidor. Verifique a internet.");
-            btn.disabled = false;
-            btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda";
-        }
+            if(imprimirA4) { imprimirReciboA4(payload); } const resposta = await enviarDadosServidor(payload); const dadosResposta = await resposta.json();
+            if(emitirNF) { if(dadosResposta.link_danfe) { alert("Venda registrada e NFC-e gerada! O PDF será aberto na tela."); window.open(dadosResposta.link_danfe, '_blank'); } else if (dadosResposta.alerta_nfe) { alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); } else { alert(dadosResposta.mensagem || "A nota está sendo processada pela SEFAZ."); } } else { alert("Operação registrada no servidor com sucesso!"); } setTimeout(() => { resetarPDV(); }, 1500);
+        } catch (erro) { console.error(erro); alert("Erro na comunicação com o servidor. Verifique a internet."); btn.disabled = false; btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; }
     }
 
-    async function abrirModalProdutos() {
-        document.getElementById('modal-lista-produtos').style.display = 'flex';
-        const tbody = document.querySelector('#tabela-lista-produtos tbody');
-        tbody.innerHTML = "";
-        if (produtosLista.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum produto carregado.</td></tr>"; return; }
-        produtosLista.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td style="text-align:left; font-weight: 500;">${p.nome}</td><td style="font-weight:700; color:var(--green-text);">R$ ${p.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="adicionarProdutoPeloModal('${p.nome}')" style="background:var(--blue-header); color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:600;">Adicionar</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function adicionarProdutoPeloModal(nomeProd) {
-        document.getElementById('busca-prod').value = nomeProd;
-        addItem();
-        document.getElementById('modal-lista-produtos').style.display = 'none';
-    }
-
-    async function abrirModalClientes() {
-        document.getElementById('modal-lista-clientes').style.display = 'flex';
-        const tbody = document.querySelector('#tabela-lista-clientes tbody');
-        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando clientes no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-        try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarClientes&nocache=${Date.now()}`);
-            const dados = await res.json();
-            tbody.innerHTML = "";
-            if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum cliente encontrado.</td></tr>"; return; }
-            dados.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.className = "linha-pendente"; 
-                tr.innerHTML = `<td style="text-align:left; font-weight:600;">${c.nome || '-'}</td><td>${c.telefone || '-'}</td><td>${c.cpf || '-'}</td>`;
-                tr.ondblclick = () => { document.getElementById('cliente-nome').value = c.nome; document.getElementById('cliente-cpf').value = c.cpf || 'Não Informado'; document.getElementById('modal-lista-clientes').style.display = 'none'; };
-                tbody.appendChild(tr);
-            });
-        } catch (e) { tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar clientes.</td></tr>"; }
-    }
-
-    async function abrirModalOrcamentos() {
-        document.getElementById('modal-lista-orcamentos').style.display = 'flex';
-        const tbody = document.querySelector('#tabela-lista-orcamentos tbody');
-        tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando orçamentos no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>";
-        try {
-            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=cofrinho&nocache=${Date.now()}`);
-            const dados = await res.json();
-            tbody.innerHTML = "";
-            if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Nenhum orçamento pendente.</td></tr>"; return; }
-            dados.forEach(o => {
-                const tr = document.createElement('tr');
-                const valorF = tratarValor(o.total || o.valor);
-                tr.innerHTML = `<td style="text-align:left; font-weight:600;">${o.cliente || '-'}</td><td>${o.data || '-'}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${valorF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button style="background:var(--green-btn); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;">Puxar Pedido</button></td>`;
-                tr.ondblclick = () => { carrinho = [{ nome: "ORÇAMENTO - " + o.cliente, valor: valorF, total: valorF, qtd: 1 }]; document.getElementById('cliente-nome').value = o.cliente; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-lista-orcamentos').style.display = 'none'; };
-                tbody.appendChild(tr);
-            });
-        } catch (e) { tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar orçamentos.</td></tr>"; }
-    }
-
+    async function abrirModalProdutos() { document.getElementById('modal-lista-produtos').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-produtos tbody'); tbody.innerHTML = ""; if (produtosLista.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum produto carregado.</td></tr>"; return; } produtosLista.forEach(p => { const tr = document.createElement('tr'); tr.innerHTML = `<td style="text-align:left; font-weight: 500;">${p.nome}</td><td style="font-weight:700; color:var(--green-text);">R$ ${p.valor.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button onclick="adicionarProdutoPeloModal('${p.nome}')" style="background:var(--blue-header); color:white; border:none; padding:6px 15px; border-radius:4px; cursor:pointer; font-weight:600;">Adicionar</button></td>`; tbody.appendChild(tr); }); }
+    function adicionarProdutoPeloModal(nomeProd) { document.getElementById('busca-prod').value = nomeProd; addItem(); document.getElementById('modal-lista-produtos').style.display = 'none'; }
+    async function abrirModalClientes() { document.getElementById('modal-lista-clientes').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-clientes tbody'); tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Buscando clientes no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; try { const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarClientes&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = ""; if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Nenhum cliente encontrado.</td></tr>"; return; } dados.forEach(c => { const tr = document.createElement('tr'); tr.className = "linha-pendente"; tr.innerHTML = `<td style="text-align:left; font-weight:600;">${c.nome || '-'}</td><td>${c.telefone || '-'}</td><td>${c.cpf || '-'}</td>`; tr.ondblclick = () => { document.getElementById('cliente-nome').value = c.nome; document.getElementById('cliente-cpf').value = c.cpf || 'Não Informado'; document.getElementById('modal-lista-clientes').style.display = 'none'; }; tbody.appendChild(tr); }); } catch (e) { tbody.innerHTML = "<tr><td colspan='3' style='color:var(--danger); text-align:center;'>Erro ao buscar clientes.</td></tr>"; } }
+    async function abrirModalOrcamentos() { document.getElementById('modal-lista-orcamentos').style.display = 'flex'; const tbody = document.querySelector('#tabela-lista-orcamentos tbody'); tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Buscando orçamentos no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; try { const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=cofrinho&nocache=${Date.now()}`); const dados = await res.json(); tbody.innerHTML = ""; if(!Array.isArray(dados) || dados.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Nenhum orçamento pendente.</td></tr>"; return; } dados.forEach(o => { const tr = document.createElement('tr'); const valorF = tratarValor(o.total || o.valor); tr.innerHTML = `<td style="text-align:left; font-weight:600;">${o.cliente || '-'}</td><td>${o.data || '-'}</td><td style="color:var(--blue-header); font-weight:700;">R$ ${valorF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><button style="background:var(--green-btn); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;">Puxar Pedido</button></td>`; tr.ondblclick = () => { carrinho = [{ nome: "ORÇAMENTO - " + o.cliente, valor: valorF, total: valorF, qtd: 1 }]; document.getElementById('cliente-nome').value = o.cliente; document.getElementById('tipo-venda').value = 'direta'; renderTable(); document.getElementById('modal-lista-orcamentos').style.display = 'none'; }; tbody.appendChild(tr); }); } catch (e) { tbody.innerHTML = "<tr><td colspan='4' style='color:var(--danger); text-align:center;'>Erro ao buscar orçamentos.</td></tr>"; } }
     function abrirModalNFCe() { document.getElementById('modal-nfce').style.display = 'flex'; }
 </script>
 </body>

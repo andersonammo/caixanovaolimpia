@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaaSPDV - Óticas Ammo Nova Olímpia</title>
     
-    <!-- FONTE MODERNA PARA SAAS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- FAVICON MODERNO -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='bg' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%2300bfff'/><stop offset='100%' stop-color='%23006699'/></linearGradient></defs><rect width='100' height='100' rx='25' fill='url(%23bg)'/><text x='50' y='65' font-family='Inter, sans-serif' font-size='65' font-weight='900' fill='%23ffffff' text-anchor='middle'>A</text><text x='50' y='90' font-family='Inter, sans-serif' font-size='20' font-weight='bold' fill='%23e9ecef' text-anchor='middle' letter-spacing='1'>SAAS</text></svg>">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -185,7 +183,6 @@
 </head>
 <body>
 
-<!-- TELA DE LOGIN OVERLAY -->
 <div id="tela-login">
     <div class="login-box">
         <div class="login-logo"><b style="font-size: 45px; line-height: 1; font-family: 'Inter', sans-serif;">A</b><span style="font-size: 13px; font-weight: 700; letter-spacing: 2px;">SAAS</span></div>
@@ -276,7 +273,6 @@
     </aside>
 </div>
 
-<!-- MODAIS LATERAIS E CAIXA -->
 <div id="modal-segunda-via" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-pdf" style="color: var(--blue-header);"></i> 2ª Via de Documentos e Notas</h3><button onclick="document.getElementById('modal-segunda-via').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-segunda-via"><thead><tr><th>Data</th><th>Nº Venda</th><th>Cliente</th><th>Tipo</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-parciais" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-search-dollar" style="color: var(--blue-header);"></i> Vendas Parciais Pendentes</h3><button onclick="document.getElementById('modal-parciais').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-parciais"><thead><tr><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Valor Total</th><th>Saldo Devedor</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-agrupada" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-layer-group" style="color: var(--blue-header);"></i> Pedidos Agrupados</h3><button onclick="document.getElementById('modal-agrupada').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-agrupada"><thead><tr><th>Cliente</th><th>Consultor</th><th>Total do Pedido</th></tr></thead><tbody></tbody></table></div></div>
@@ -285,7 +281,6 @@
 <div id="modal-lista-orcamentos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-calculator" style="color: var(--blue-header);"></i> Orçamentos Salvos</h3><button onclick="document.getElementById('modal-lista-orcamentos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-orcamentos"><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-nfce" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-invoice-dollar" style="color: var(--blue-header);"></i> Gestão de NFC-e</h3><button onclick="document.getElementById('modal-nfce').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-nfce"><thead><tr><th>Nº Venda</th><th>Cliente</th><th>Valor Total</th><th>Status SEFAZ</th><th>Ação</th></tr></thead><tbody><tr><td colspan="5" style="color: #888; padding: 20px; text-align: center;">Nenhuma nota fiscal pendente de transmissão.</td></tr></tbody></table></div></div>
 
-<!-- TELA DE AUTORIZAÇÃO MASTER -->
 <div id="modal-auth-master" class="modal-overlay">
     <div class="modal-box-caixa" style="text-align: center;">
         <h3 style="color: var(--danger); border-bottom: none; margin-bottom: 5px;"><i class="fas fa-user-shield"></i> Liberação Gerencial</h3>
@@ -424,8 +419,9 @@
     const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbyRnFjzeYrGvweXMaLABVnWOgL4DHi5AMzBpsvrnVyxVB1dWmwvZZoQ5WuZblzzGx3B-w/exec";
 
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
+    // Defina as senhas e quem é o dono de cada senha.
     const SENHAS_MASTER = {
-        "financeiro2026": "GUSTAVO", 
+       "financeiro2026": "GUSTAVO", 
         "bino2026": "WEVERTON",
         "174639": "ANDERSON"
     }; 
@@ -579,6 +575,11 @@
             const sel = document.getElementById('vendedor-select'); 
             sel.innerHTML = ""; 
             (data.vendedores || []).forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
+            
+            // === SELECIONA O COLABORADOR LOGADO AUTOMATICAMENTE ===
+            const usuarioLogado = document.getElementById('login-user').value;
+            if (usuarioLogado) { sel.value = usuarioLogado; }
+            
         } catch (e) { console.error("Falha", e); }
     }
 

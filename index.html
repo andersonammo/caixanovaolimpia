@@ -179,9 +179,23 @@
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
         .badge-nfce { background: #e0f2fe; color: #0284c7; }
         .badge-recibo { background: #f0fdf4; color: #16a34a; }
+
+        /* ============================================================== 
+           CSS DE IMPRESSÃO (O SEGREDO PARA NÃO TRAVAR O TECLADO!) 
+           ============================================================== */
+        @media screen {
+            #area-impressao { display: none; }
+        }
+        @media print {
+            body > *:not(#area-impressao) { display: none !important; }
+            #area-impressao { display: block !important; width: 80mm; margin: 0 auto; }
+            @page { margin: 0; size: 80mm auto; }
+        }
     </style>
 </head>
 <body>
+
+<div id="area-impressao"></div>
 
 <div id="tela-login">
     <div class="login-box">
@@ -412,7 +426,7 @@
 </div>
 
 <script>
-     // =========================================================================
+    // =========================================================================
     // 1. DEFINA AQUI AS URLs DO SEU GOOGLE APPS SCRIPT (WEB APP)
     // =========================================================================
     const URL_BASE_1_GERAL = "https://script.google.com/macros/s/AKfycbzciM5IA25tZ9CcRkwj0-okP5CQ0IG3wpmZeT40vbPGiCtovD3au5Ccgr9jTxcJhSc6/exec";
@@ -480,40 +494,22 @@
     }
 
     // =========================================================================
-    // NOVO SISTEMA DE IMPRESSÃO SILENCIOSA (SEM POP-UPS)
+    // O SEGREDO DO NATIVEFIER: IMPRESSÃO DIRETA SEM POPUPS!
     // =========================================================================
-    function imprimirHTMLSilencioso(conteudoHtml) {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = 'none';
-        document.body.appendChild(iframe);
+    function imprimirHTMLSeguro(conteudoHtml) {
+        const area = document.getElementById('area-impressao');
+        area.innerHTML = conteudoHtml;
         
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(conteudoHtml);
-        doc.close();
-        
-        iframe.contentWindow.focus();
+        // Aguarda 100ms para o navegador renderizar o texto e chama a impressora
         setTimeout(() => {
-            iframe.contentWindow.print();
-            setTimeout(() => { document.body.removeChild(iframe); }, 3000);
-        }, 500);
-    }
-
-    // Usado para forçar a abertura da aba do PDF da Focus, driblando o bloqueio
-    function abrirLinkNovaAbaForcado(url) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+            window.print();
+            // Limpa tudo depois de imprimir para voltar a tela normal
+            area.innerHTML = '';
+        }, 100);
     }
 
     // =========================================================================
-    // SISTEMA DE LOGIN E ABERTURA OBRIGATÓRIA
+    // SISTEMA DE LOGIN E ABERTURA (TRAVA ABSOLUTA)
     // =========================================================================
     async function entrarSistema() {
         const user = document.getElementById('login-user').value.trim().toLowerCase();
@@ -552,11 +548,13 @@
                 try {
                     const resCx = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=status_caixa&vendedor=${encodeURIComponent(nomeColaborador)}`);
                     const cxData = await resCx.json();
-                    cxUltimoFechamento = parseFloat(cxData.ultimoFechamento) || 0;
                     
-                    // TRAVA DEFINITIVA: SEMPRE EXIGE ABERTURA, MESMO SE ESTIVER ABERTO LÁ ATRÁS
+                    // TRAVA DEFINITIVA: SEMPRE EXIGE ABERTURA! 
+                    // O sistema vai forçar você a confirmar o fundo de caixa.
+                    cxUltimoFechamento = parseFloat(cxData.ultimoFechamento) || 0;
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura');
+
                 } catch (e) {
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura'); 
@@ -664,7 +662,7 @@
                 const data = await res.json(); 
                 cxSessao = data.idSessao; 
                 cxFundoInicial = valor; 
-                imprimirComprovanteSilencioso("ABERTURA DE CAIXA", valor, desc, operador);
+                imprimirComprovanteSeguro("ABERTURA DE CAIXA", valor, desc, operador);
             } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
                 if(!cxSessao) { 
                     alert("Sessão do caixa não identificada."); 
@@ -675,7 +673,7 @@
                 const prefixo = tipoOperacaoAtual === 'sangria' ? "[SANGRIA] " : "[DESPESA] "; 
                 const payloadDespesa = { tipo: 'lancar_despesa', vendedor: operador, descricao: prefixo + desc, valor: valor, idSessaoCaixa: cxSessao };
                 await enviarDadosServidor(payloadDespesa); 
-                imprimirComprovanteSilencioso(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
+                imprimirComprovanteSeguro(tipoOperacaoAtual.toUpperCase(), valor, desc, operador);
             }
             document.getElementById('modal-operacao-caixa').style.display = 'none';
         } catch(e) { 
@@ -735,7 +733,6 @@
     async function abrirModalFechamento() {
         document.getElementById("dropdown-caixa").classList.remove("show-dropdown");
 
-        // === TRAVA DE HORÁRIO (FECHAR ANTES DAS 17:50) ===
         const agora = new Date(); 
         const hora = agora.getHours(); 
         const minuto = agora.getMinutes();
@@ -805,7 +802,6 @@
         const esperado = parseFloat(document.getElementById('fech-esperado').dataset.valor) || 0;
         const quebra = informado - esperado;
         
-        // === TRAVA DE VALOR NEGATIVO (FALTA NO CAIXA) ===
         if (quebra < 0 && !bloqueioQuebraIgnorado) {
             motivoBloqueioAtual = 'quebra';
             document.getElementById('msg-auth-master').innerText = `O caixa apresenta falta de R$ ${Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2})}. Esta operação requer a senha Master para gerar o Vale.`;
@@ -834,17 +830,22 @@
 
         try {
             await enviarDadosServidor(payload);
-            imprimirRelatorioFechamentoPDFSilencioso(informado, esperado, quebra, operador, adminAutorizador);
             
-            // Impressão extra: O VALE do funcionário
+            // Usando o novo sistema que não trava o teclado
+            imprimirRelatorioFechamentoSeguro(informado, esperado, quebra, operador, adminAutorizador);
+            
             if (quebra < 0) {
-                setTimeout(() => { imprimirValeSilencioso(quebra, operador, adminAutorizador); }, 3000);
+                // Atrasa o vale para dar tempo da primeira impressão terminar
+                setTimeout(() => { imprimirValeSeguro(quebra, operador, adminAutorizador); }, 3000);
             }
             
-            alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
-            cxSessao = ""; 
-            carrinho = []; 
-            location.reload(); 
+            setTimeout(() => {
+                alert("Turno encerrado. O sistema será reiniciado e começará um novo ciclo zerado.");
+                cxSessao = ""; 
+                carrinho = []; 
+                location.reload(); 
+            }, 4000);
+            
         } catch(e) { 
             alert("Erro ao fechar o caixa no servidor."); 
             btn.innerHTML = "<i class='fas fa-print me-2'></i> Fechar Caixa e Imprimir Relatório"; 
@@ -853,130 +854,118 @@
     }
 
     // =========================================================================
-    // FUNÇÕES DE IMPRESSÃO (SILENCIOSAS VIA IFRAME)
+    // TEMPLATES DE IMPRESSÃO (LIMPOS PARA O NATIVEFIER)
     // =========================================================================
-    function imprimirValeSilencioso(quebra, operador, adminAuth) {
+    function imprimirValeSeguro(quebra, operador, adminAuth) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         const valorFalta = Math.abs(quebra).toLocaleString('pt-br', {minimumFractionDigits: 2});
 
-        const templateHtml = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8"><title>Vale Quebra de Caixa</title>
-            <style>
-                @page { size: 80mm 200mm; margin: 5mm; } 
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; margin: 0; padding: 0; width: 70mm; font-size: 12px; } 
-                .cabecalho { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; } 
-                .cabecalho h2 { margin: 0; font-size: 15px; font-weight: 900;} 
-                .cabecalho p { margin: 2px 0; font-size: 11px; font-weight: bold; } 
-                .info { margin-bottom: 10px; } 
-                .info p { margin: 4px 0; } 
-                .valor { text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; border: 1px dashed #000; padding: 10px; } 
-                .texto-termo { font-size: 10px; text-align: justify; margin-bottom: 20px; line-height: 1.4; }
-                .assinatura { margin-top: 30px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px; margin-bottom: 10px;}
-            </style>
-        </head>
-        <body>
-            <div class="cabecalho"><h2>ÓTICAS AMMO NOVA OLÍMPIA</h2><p>VALE - QUEBRA DE CAIXA</p></div>
-            <div class="info">
-                <p><strong>Data/Hora:</strong> ${dataAtual}</p>
-                <p><strong>Sessão:</strong> ${cxSessao}</p>
-                <p><strong>Operador(a):</strong> ${operador}</p>
-                <p><strong>Autorizador:</strong> ${adminAuth || 'Não informado'}</p>
+        const html = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
+                <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <p style="margin: 2px 0; font-size: 11px; font-weight: bold;">VALE - QUEBRA DE CAIXA</p>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <p style="margin: 4px 0;"><strong>Data/Hora:</strong> ${dataAtual}</p>
+                    <p style="margin: 4px 0;"><strong>Sessão:</strong> ${cxSessao}</p>
+                    <p style="margin: 4px 0;"><strong>Operador(a):</strong> ${operador}</p>
+                    <p style="margin: 4px 0;"><strong>Autorizador:</strong> ${adminAuth || 'Não informado'}</p>
+                </div>
+                <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; border: 1px dashed #000; padding: 10px;">
+                    R$ ${valorFalta}
+                </div>
+                <p style="font-size: 10px; text-align: justify; margin-bottom: 20px; line-height: 1.4;">
+                    Reconheço a falta do valor especificado acima no fechamento do meu caixa, referente à data de ${dataAtual.split(' ')[0]}. Estou ciente de que este valor poderá ser descontado dos meus vencimentos, conforme as normas da empresa.
+                </p>
+                <div style="margin-top: 30px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px; margin-bottom: 10px;">
+                    <p style="margin-bottom: 25px;"></p>Assinatura do Operador(a)
+                </div>
+                <div style="margin-top: 30px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px; margin-bottom: 10px;">
+                    <p style="margin-bottom: 25px;"></p>Assinatura do Gerente/Autorizador
+                </div>
             </div>
-            <div class="valor">R$ ${valorFalta}</div>
-            <p class="texto-termo">Reconheço a falta do valor especificado acima no fechamento do meu caixa, referente à data de ${dataAtual.split(' ')[0]}. Estou ciente de que este valor poderá ser descontado dos meus vencimentos, conforme as normas da empresa.</p>
-            <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Operador(a)</div>
-            <div class="assinatura"><p style="margin-bottom: 25px;"></p>Assinatura do Gerente/Autorizador</div>
-        </body>
-        </html>`;
-        
-        imprimirHTMLSilencioso(templateHtml);
+        `;
+        imprimirHTMLSeguro(html);
     }
 
-    function imprimirRelatorioFechamentoPDFSilencioso(informado, esperado, quebra, operador, adminAuth) {
+    function imprimirRelatorioFechamentoSeguro(informado, esperado, quebra, operador, adminAuth) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         const saidas = (cxResumoAtual.despesas || 0) + (cxResumoAtual.sangrias || 0);
         let movHtml = "";
         
         cxResumoAtual.movimentacoes.forEach(m => { 
-            movHtml += `<tr><td style="font-size:10px;">${m.hora}</td><td style="font-size:10px;">${m.tipo}</td><td style="font-size:10px;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right;">R$ ${m.valor.toFixed(2)}</td></tr>`; 
+            movHtml += `<tr><td style="font-size:10px; border-bottom: 1px dotted #ccc; padding:3px 0;">${m.hora}</td><td style="font-size:10px; border-bottom: 1px dotted #ccc; padding:3px 0;">${m.tipo}</td><td style="font-size:10px; border-bottom: 1px dotted #ccc; padding:3px 0;">${m.desc.substring(0,18)}</td><td style="font-size:10px; text-align:right; border-bottom: 1px dotted #ccc; padding:3px 0;">R$ ${m.valor.toFixed(2)}</td></tr>`; 
         });
 
         let linhaAutorizacao = '';
         if (adminAuth) { 
-            linhaAutorizacao = `<hr style="border:0; border-top:1px dashed #000; margin:5px 0;"><div class="linha" style="font-weight:bold;"><span>Autorizado por:</span> <span>${adminAuth}</span></div>`; 
+            linhaAutorizacao = `<hr style="border:0; border-top:1px dashed #000; margin:5px 0;"><div style="display:flex; justify-content:space-between; margin-bottom:4px; font-weight:bold;"><span>Autorizado por:</span> <span>${adminAuth}</span></div>`; 
         }
 
-        const templateHtml = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8"><title>Fechamento Z - ${cxSessao}</title>
-            <style>
-                @page { size: 80mm 297mm; margin: 5mm; } 
-                body { font-family: 'Courier New', Courier, monospace; color: #000; margin: 0; padding: 0; width: 70mm; font-size: 11px; } 
-                .cabecalho { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; } 
-                .cabecalho h2 { margin: 0; font-size: 15px; font-weight: 900;} 
-                .info p { margin: 3px 0; } 
-                .resumo { margin: 15px 0; border: 1px dashed #000; padding: 8px; }
-                .linha { display: flex; justify-content: space-between; margin-bottom: 4px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { border-bottom: 1px dotted #ccc; padding: 3px 0; text-align: left; }
-            </style>
-        </head>
-        <body>
-            <div class="cabecalho"><h2>ÓTICAS AMMO NOVA OLÍMPIA</h2><p>RELATÓRIO Z - FECHAMENTO DE CAIXA</p></div>
-            <div class="info"><p><strong>Sessão:</strong> ${cxSessao}</p><p><strong>Data/Hora:</strong> ${dataAtual}</p><p><strong>Operador:</strong> ${operador}</p></div>
-            <div class="resumo">
-                <div class="linha"><span>Fundo Inicial:</span> <span>R$ ${cxFundoInicial.toFixed(2)}</span></div>
-                <div class="linha"><span>Vendas Dinheiro:</span> <span>(+) R$ ${(cxResumoAtual.vendasDinheiro || 0).toFixed(2)}</span></div>
-                <div class="linha"><span>Sangrias/Despesas:</span> <span>(-) R$ ${saidas.toFixed(2)}</span></div>
-                <hr style="border:0; border-top:1px solid #000; margin:5px 0;">
-                <div class="linha" style="font-weight:bold;"><span>Saldo Esperado:</span> <span>R$ ${esperado.toFixed(2)}</span></div>
-                <div class="linha" style="font-weight:bold;"><span>Valor Informado:</span> <span>R$ ${informado.toFixed(2)}</span></div>
-                <div class="linha"><span>Diferença (Quebra):</span> <span>R$ ${quebra.toFixed(2)}</span></div>
-                ${linhaAutorizacao}
+        const html = `
+            <div style="font-family: 'Courier New', Courier, monospace; color: #000; width: 70mm; font-size: 11px; margin: 0 auto; padding-top: 10px;">
+                <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <p style="margin: 2px 0;">RELATÓRIO Z - FECHAMENTO DE CAIXA</p>
+                </div>
+                <div>
+                    <p style="margin: 3px 0;"><strong>Sessão:</strong> ${cxSessao}</p>
+                    <p style="margin: 3px 0;"><strong>Data/Hora:</strong> ${dataAtual}</p>
+                    <p style="margin: 3px 0;"><strong>Operador:</strong> ${operador}</p>
+                </div>
+                <div style="margin: 15px 0; border: 1px dashed #000; padding: 8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Fundo Inicial:</span> <span>R$ ${cxFundoInicial.toFixed(2)}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Vendas Dinheiro:</span> <span>(+) R$ ${(cxResumoAtual.vendasDinheiro || 0).toFixed(2)}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Sangrias/Despesas:</span> <span>(-) R$ ${saidas.toFixed(2)}</span></div>
+                    <hr style="border:0; border-top:1px solid #000; margin:5px 0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-weight:bold;"><span>Saldo Esperado:</span> <span>R$ ${esperado.toFixed(2)}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-weight:bold;"><span>Valor Informado:</span> <span>R$ ${informado.toFixed(2)}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Diferença:</span> <span>R$ ${quebra.toFixed(2)}</span></div>
+                    ${linhaAutorizacao}
+                </div>
+                <p style="text-align:center; font-weight:bold; margin-top:15px; border-bottom:1px dashed #000;">EXTRATO DE MOVIMENTAÇÃO</p>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead><tr><th style="text-align:left; border-bottom: 1px solid #000; padding-bottom:3px;">Hora</th><th style="text-align:left; border-bottom: 1px solid #000; padding-bottom:3px;">Tipo</th><th style="text-align:left; border-bottom: 1px solid #000; padding-bottom:3px;">Desc.</th><th style="text-align:right; border-bottom: 1px solid #000; padding-bottom:3px;">Valor</th></tr></thead>
+                    <tbody>${movHtml}</tbody>
+                </table>
+                <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">
+                    <p style="margin-bottom: 25px;"></p>Assinatura do Operador/Gerente
+                </div>
             </div>
-            <p style="text-align:center; font-weight:bold; margin-top:15px; border-bottom:1px dashed #000;">EXTRATO DE MOVIMENTAÇÃO</p>
-            <table><thead><tr><th>Hora</th><th>Tipo</th><th>Desc.</th><th style="text-align:right;">Valor</th></tr></thead><tbody>${movHtml}</tbody></table>
-            <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">Assinatura do Operador/Gerente</div>
-        </body>
-        </html>`;
-        
-        imprimirHTMLSilencioso(templateHtml);
+        `;
+        imprimirHTMLSeguro(html);
     }
 
-    function imprimirComprovanteSilencioso(tipo, valor, desc, operador) {
+    function imprimirComprovanteSeguro(tipo, valor, desc, operador) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         
-        const templateHtml = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8"><title>Comprovante - ${tipo}</title>
-            <style>
-                @page { size: 80mm 200mm; margin: 5mm; } 
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; margin: 0; padding: 0; width: 70mm; font-size: 12px; } 
-                .cabecalho { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; } 
-                .cabecalho h2 { margin: 0; font-size: 16px; font-weight: 900;} 
-                .cabecalho p { margin: 2px 0; font-size: 10px; } 
-                .info { margin-bottom: 10px; } 
-                .info p { margin: 4px 0; } 
-                .valor { text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; border: 1px dashed #000; padding: 10px; } 
-                .assinatura { margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px; }
-            </style>
-        </head>
-        <body>
-            <div class="cabecalho"><h2>ÓTICAS AMMO NOVA OLÍMPIA</h2><p>COMPROVANTE DE OPERAÇÃO DE CAIXA</p><p>Documento Gerencial Interno</p></div>
-            <div class="info"><p><strong>Operação:</strong> ${tipo}</p><p><strong>Data/Hora:</strong> ${dataAtual}</p><p><strong>Operador:</strong> ${operador}</p><p><strong>Descrição:</strong> ${desc}</p></div>
-            <div class="valor">R$ ${parseFloat(valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}</div>
-            <div class="assinatura"><p style="margin-bottom: 30px;"></p>Assinatura do Operador/Gerente</div>
-        </body>
-        </html>`;
-        
-        imprimirHTMLSilencioso(templateHtml);
+        const html = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
+                <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 16px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <p style="margin: 2px 0; font-size: 10px;">COMPROVANTE DE OPERAÇÃO DE CAIXA</p>
+                    <p style="margin: 2px 0; font-size: 10px;">Documento Gerencial Interno</p>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <p style="margin: 4px 0;"><strong>Operação:</strong> ${tipo}</p>
+                    <p style="margin: 4px 0;"><strong>Data/Hora:</strong> ${dataAtual}</p>
+                    <p style="margin: 4px 0;"><strong>Operador:</strong> ${operador}</p>
+                    <p style="margin: 4px 0;"><strong>Descrição:</strong> ${desc}</p>
+                </div>
+                <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; border: 1px dashed #000; padding: 10px;">
+                    R$ ${parseFloat(valor).toLocaleString('pt-br', {minimumFractionDigits: 2})}
+                </div>
+                <div style="margin-top: 40px; border-top: 1px solid #000; text-align: center; font-size: 10px; padding-top: 5px;">
+                    <p style="margin-bottom: 30px;"></p>Assinatura do Operador/Gerente
+                </div>
+            </div>
+        `;
+        imprimirHTMLSeguro(html);
+    }
+
+    function imprimirReciboA4(payload) {
+        console.log("A geração de A4 pode ser configurada futuramente se necessário.");
     }
 
     // =========================================================================
@@ -1097,16 +1086,31 @@
             abrirModalCaixa('abertura'); 
             return; 
         } 
-        const nome = document.getElementById('busca-prod').value; 
+        
+        let nome = document.getElementById('busca-prod').value.trim(); 
+        if (!nome) return alert("Digite o nome do produto para adicionar.");
+        
         const qtdInput = parseInt(document.getElementById('qtd').value) || 1; 
-        const p = produtosLista.find(x => x.nome === nome); 
+        const p = produtosLista.find(x => x.nome.toUpperCase() === nome.toUpperCase()); 
         
-        if(!p) return alert("Produto não encontrado na lista."); 
+        let valorFinal = 0;
         
-        carrinho.push({ nome: p.nome, valor: p.valor, total: p.valor * qtdInput, qtd: qtdInput }); 
+        if(!p) {
+            let precoDigitado = prompt(`O item "${nome}" não está na tabela.\n\nDigite o VALOR UNITÁRIO para lançar manualmente (Ex: 150,00):`);
+            if (precoDigitado === null || precoDigitado.trim() === "") return; 
+            
+            valorFinal = parseFloat(precoDigitado.replace(',', '.'));
+            if (isNaN(valorFinal) || valorFinal < 0) return alert("Valor inválido! Digite apenas números.");
+        } else {
+            valorFinal = p.valor;
+            nome = p.nome; 
+        }
+        
+        carrinho.push({ nome: nome, valor: valorFinal, total: valorFinal * qtdInput, qtd: qtdInput }); 
         renderTable(); 
         document.getElementById('busca-prod').value = ""; 
         document.getElementById('qtd').value = "1"; 
+        document.getElementById('busca-prod').focus(); 
     }
 
     function limparCarrinho() { 
@@ -1284,10 +1288,8 @@
                         else if (linkFinal.startsWith("/v2")) { linkFinal = "https://api.focusnfe.com.br" + linkFinal; }
                     }
 
-                    // Força abrir a aba da NFC-e driblando o bloqueador
-                    abrirLinkNovaAbaForcado(linkFinal);
-                    alert("Venda registrada e NFC-e gerada com sucesso!"); 
-                    
+                    // Força abrir a aba da NFC-e (Isso é permitido, pois é a SEFAZ real)
+                    window.location.href = linkFinal; 
                 } else if (dadosResposta.alerta_nfe) { 
                     alert("Venda salva, mas atenção: " + dadosResposta.alerta_nfe); 
                 } else { 
@@ -1437,8 +1439,7 @@
             const dados = await res.json();
             
             if (dados.sucesso && dados.link) {
-                // Força abrir a aba da NFC-e driblando o bloqueador
-                abrirLinkNovaAbaForcado(dados.link);
+                window.location.href = dados.link; // Abre na mesma janela para não dar erro
             } else {
                 alert("Não foi possível consultar a nota na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
             }

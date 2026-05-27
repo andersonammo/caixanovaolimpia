@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SaaSPDV - Óticas Ammo Nova Olímpia</title>
+    <title>CAIXA NOVA OLIMPIA</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -192,6 +192,7 @@
             @page { margin: 0; size: 80mm auto; }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -200,7 +201,7 @@
 <div id="tela-login">
     <div class="login-box">
         <div class="login-logo"><b style="font-size: 45px; line-height: 1; font-family: 'Inter', sans-serif;">A</b><span style="font-size: 13px; font-weight: 700; letter-spacing: 2px;">SAAS</span></div>
-        <h2>PDV - Ammo Nova Olímpia</h2>
+        <h2>PDV NOVA OLÍMPIA</h2>
         <h3>Acesso Exclusivo Gerência</h3>
         <input type="text" id="login-user" placeholder="Usuário" autocomplete="off">
         <input type="password" id="login-pass" placeholder="Senha">
@@ -229,7 +230,7 @@
             <i class="fas fa-search"></i>
             <input type="text" id="input-filtro-tabela" placeholder="Pesquisar itens no carrinho..." onkeyup="filtrarCarrinho()">
         </div>
-        <span style="font-size: 13px; font-weight: 700; color: #fcd34d; letter-spacing: 0.5px;">AMMO PDV - NOVA OLÍMPIA</span>
+        <span style="font-size: 13px; font-weight: 700; color: #fcd34d; letter-spacing: 0.5px;">AMMO PDV - PEROBAL</span>
     </div>
     <div class="header-icons">
         <i class="fas fa-sync-alt" style="color: #34d399;" onclick="recarregarParametros()" title="Recarregar Parâmetros do Servidor"></i>
@@ -262,7 +263,7 @@
 
         <div class="footer-pdv">
             <div class="client-info">
-                <div><strong>VENDEDOR/STREET:</strong> <select id="vendedor-select" style="width: 200px; margin-left: 10px;"></select></div>
+                <div><strong>VENDEDOR:</strong> <select id="vendedor-select" style="width: 200px; margin-left: 10px;"></select></div>
                 <div style="margin-top: 5px;"><strong>CLIENTE:</strong> <input type="text" id="cliente-nome" value="Venda ao consumidor" style="width: 300px; margin-left: 10px;"><input type="hidden" id="cliente-cpf" value="Não Informado"></div>
             </div>
             <div style="display: flex; align-items: center;">
@@ -405,8 +406,8 @@
                 <div class="mp-grid-pagos">
                     <div class="mp-grid-title"><i class="fas fa-print"></i> Opções de Impressão</div>
                     <div style="padding:10px 15px; font-size:12px; color: #475569; display:flex; flex-direction:column; gap:8px;">
-                        <label style="cursor:pointer; font-weight:600; color:var(--dark-sidebar); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-recibo" checked style="width:16px; height:16px; accent-color: var(--dark-sidebar);"> Imprimir Recibo PDV</label>
-                        <label style="cursor:pointer; font-weight:600; color:var(--blue-header); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-nfce" checked style="width:16px; height:16px; accent-color: var(--blue-header);"> Emitir Cupom Fiscal (NFC-e)</label>
+                        <label style="cursor:pointer; font-weight:600; color:var(--dark-sidebar); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-recibo" style="width:16px; height:16px; accent-color: var(--dark-sidebar);"> Imprimir Recibo PDV</label>
+                        <label style="cursor:pointer; font-weight:600; color:var(--blue-header); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-nfce" style="width:16px; height:16px; accent-color: var(--blue-header);"> Emitir Cupom Fiscal (NFC-e)</label>
                     </div>
                 </div>
             </div>
@@ -429,7 +430,6 @@
     // =========================================================================
     // 1. DEFINA AQUI AS URLs DO SEU GOOGLE APPS SCRIPT (WEB APP)
     // =========================================================================
-    const URL_BASE_1_GERAL = "https://script.google.com/macros/s/AKfycbzciM5IA25tZ9CcRkwj0-okP5CQ0IG3wpmZeT40vbPGiCtovD3au5Ccgr9jTxcJhSc6/exec";
     const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbyt7EnnYa60CW4T200XHZacfHqDPHQ8OFHexSwMf14jR-W_eqDh-NMhaY_bCxaze2RLpA/exec";
 
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
@@ -457,18 +457,12 @@
     // FUNÇÕES DE COMUNICAÇÃO E UTILITÁRIOS
     // =========================================================================
     async function enviarDadosServidor(payload) {
-        let payloadGeral = JSON.parse(JSON.stringify(payload));
-        if (payloadGeral.emitirNotaFiscal !== undefined) { 
-            payloadGeral.emitirNotaFiscal = false; 
-        }
-        fetch(URL_BASE_1_GERAL, { 
-            method: 'POST', 
-            body: JSON.stringify(payloadGeral) 
-        }).catch(e => console.error("Falha ao salvar no Servidor Geral", e));
-        
-        return await fetch(URL_BASE_2_PRINCIPAL, { 
-            method: 'POST', 
-            body: JSON.stringify(payload) 
+        // Comunicação alinhada: este frontend envia somente para o backend principal.
+        // Não existe mais URL_BASE_1_GERAL nem envio duplicado para outro BD.
+        return await fetch(URL_BASE_2_PRINCIPAL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
         });
     }
 
@@ -737,9 +731,9 @@
         const hora = agora.getHours(); 
         const minuto = agora.getMinutes();
         
-        if ((hora < 17 || (hora === 17 && minuto < 50)) && !bloqueioTempoIgnorado) {
+        if ((hora < 17 || (hora === 17 && minuto < 15)) && !bloqueioTempoIgnorado) {
             motivoBloqueioAtual = 'horario'; 
-            document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:50 requer a senha Master."; 
+            document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:15 requer a senha Master."; 
             document.getElementById('modal-auth-master').style.display = 'flex'; 
             document.getElementById('senha-master').value = ''; 
             return; 
@@ -863,7 +857,7 @@
         const html = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO PEROBAL</h2>
                     <p style="margin: 2px 0; font-size: 11px; font-weight: bold;">VALE - QUEBRA DE CAIXA</p>
                 </div>
                 <div style="margin-bottom: 10px;">
@@ -906,7 +900,7 @@
         const html = `
             <div style="font-family: 'Courier New', Courier, monospace; color: #000; width: 70mm; font-size: 11px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
-                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO PEROBAL</h2>
                     <p style="margin: 2px 0;">RELATÓRIO Z - FECHAMENTO DE CAIXA</p>
                 </div>
                 <div>
@@ -943,7 +937,7 @@
         const html = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 16px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <h2 style="margin: 0; font-size: 16px; font-weight: 900;">ÓTICAS AMMO PEROBAL</h2>
                     <p style="margin: 2px 0; font-size: 10px;">COMPROVANTE DE OPERAÇÃO DE CAIXA</p>
                     <p style="margin: 2px 0; font-size: 10px;">Documento Gerencial Interno</p>
                 </div>
@@ -964,8 +958,111 @@
         imprimirHTMLSeguro(html);
     }
 
+    function montarHTMLOrdemServico(payload) {
+        const dataAtual = new Date().toLocaleString('pt-BR');
+        const itens = (payload.itens || []).map(item => {
+            const qtd = item.qtd || 1;
+            const nome = item.nome || 'Produto';
+            const valor = parseFloat(item.valor || 0);
+            const total = parseFloat(item.total || (qtd * valor));
+            return `
+                <tr>
+                    <td style="padding:6px; border-bottom:1px solid #e5e7eb; text-align:left;">${qtd}x ${nome}</td>
+                    <td style="padding:6px; border-bottom:1px solid #e5e7eb; text-align:right;">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td style="padding:6px; border-bottom:1px solid #e5e7eb; text-align:right;">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                </tr>`;
+        }).join('');
+
+        const moeda = valor => (parseFloat(valor || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        return `
+            <div style="font-family: Arial, sans-serif; color:#111827; width:190mm; min-height:260mm; padding:16mm; box-sizing:border-box; background:#fff;">
+                <div style="text-align:center; border-bottom:3px solid #0099cc; padding-bottom:12px; margin-bottom:16px;">
+                    <h1 style="margin:0; font-size:24px; color:#0f172a;">ÓTICAS AMMO PEROBAL</h1>
+                    <p style="margin:4px 0 0; font-size:13px; color:#475569;">ORDEM DE SERVIÇO / RECIBO DE VENDA</p>
+                </div>
+
+                <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:14px;">
+                    <tr>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>Nº Venda:</strong> ${payload.idVenda || '-'}</td>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>Data:</strong> ${dataAtual}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>Cliente:</strong> ${payload.nomeCliente || '-'}</td>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>CPF:</strong> ${payload.cpf || 'Não informado'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>Vendedor:</strong> ${payload.vendedor || '-'}</td>
+                        <td style="padding:7px; border:1px solid #cbd5e1;"><strong>Forma Pgto:</strong> ${payload.formaPagamento || '-'}</td>
+                    </tr>
+                </table>
+
+                <h3 style="font-size:15px; margin:10px 0; color:#0f172a;">Itens</h3>
+                <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:14px;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th style="padding:7px; text-align:left; border-bottom:1px solid #cbd5e1;">Produto</th>
+                            <th style="padding:7px; text-align:right; border-bottom:1px solid #cbd5e1;">Unitário</th>
+                            <th style="padding:7px; text-align:right; border-bottom:1px solid #cbd5e1;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itens || '<tr><td colspan="3" style="padding:8px; text-align:center;">Sem itens</td></tr>'}</tbody>
+                </table>
+
+                <table style="width:100%; border-collapse:collapse; font-size:14px; margin-top:8px;">
+                    <tr><td style="padding:6px; text-align:right;">Subtotal:</td><td style="padding:6px; width:130px; text-align:right;">${moeda(payload.subtotal)}</td></tr>
+                    <tr><td style="padding:6px; text-align:right;">Desconto:</td><td style="padding:6px; text-align:right;">${moeda(payload.desconto)}</td></tr>
+                    <tr><td style="padding:6px; text-align:right;">Acréscimo:</td><td style="padding:6px; text-align:right;">${moeda(payload.acrescimo)}</td></tr>
+                    <tr><td style="padding:8px; text-align:right; font-weight:bold; font-size:18px; border-top:2px solid #0f172a;">Total:</td><td style="padding:8px; text-align:right; font-weight:bold; font-size:18px; border-top:2px solid #0f172a;">${moeda(payload.valorTotal)}</td></tr>
+                    <tr><td style="padding:6px; text-align:right;">Valor pago:</td><td style="padding:6px; text-align:right;">${moeda(payload.valorPago)}</td></tr>
+                    <tr><td style="padding:6px; text-align:right;">Saldo devedor:</td><td style="padding:6px; text-align:right;">${moeda(payload.saldoDevedor)}</td></tr>
+                </table>
+
+                <div style="display:flex; justify-content:space-between; margin-top:50px; font-size:12px;">
+                    <div style="width:44%; text-align:center; border-top:1px solid #111827; padding-top:7px;">Assinatura do Cliente</div>
+                    <div style="width:44%; text-align:center; border-top:1px solid #111827; padding-top:7px;">Assinatura da Loja</div>
+                </div>
+            </div>`;
+    }
+
+    async function gerarArquivoPdfBase64OS(payload) {
+        try {
+            if (typeof html2pdf === 'undefined') {
+                console.warn('html2pdf não carregou. O PDF não será enviado ao backend.');
+                return '';
+            }
+
+            const elemento = document.createElement('div');
+            elemento.style.position = 'fixed';
+            elemento.style.left = '-10000px';
+            elemento.style.top = '0';
+            elemento.innerHTML = montarHTMLOrdemServico(payload);
+            document.body.appendChild(elemento);
+
+            const opcoes = {
+                margin: 0,
+                filename: `${payload.idVenda || 'ordem_servico'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const dataUri = await html2pdf().set(opcoes).from(elemento).outputPdf('datauristring');
+            document.body.removeChild(elemento);
+
+            if (String(dataUri || '').startsWith('data:application/pdf')) {
+                return dataUri;
+            }
+
+            return '';
+        } catch (erro) {
+            console.error('Erro ao gerar PDF da OS:', erro);
+            return '';
+        }
+    }
+
     function imprimirReciboA4(payload) {
-        console.log("A geração de A4 pode ser configurada futuramente se necessário.");
+        imprimirHTMLSeguro(montarHTMLOrdemServico(payload));
     }
 
     // =========================================================================
@@ -996,6 +1093,8 @@
         document.getElementById('v-acrescimo').value = ""; 
         document.getElementById('v-cred-parcelas').value = "1"; 
         document.getElementById('chk-pag-parcial').checked = false; 
+        document.getElementById('chk-imprimir-recibo').checked = false; 
+        document.getElementById('chk-imprimir-nfce').checked = false; 
         fecharTelaPagamento(); 
         const btn = document.getElementById('btn-confirma-fim'); 
         btn.disabled = false; 
@@ -1276,7 +1375,9 @@
         btn.innerHTML = "<i class='fas fa-circle-notch fa-spin'></i> Finalizando...";
 
         try {
-            if(imprimirA4) { imprimirReciboA4(payload); } 
+            payload.arquivoPdfBase64 = await gerarArquivoPdfBase64OS(payload);
+            if (imprimirA4) { imprimirReciboA4(payload); }
+
             const resposta = await enviarDadosServidor(payload); 
             const dadosResposta = await resposta.json();
             
@@ -1427,6 +1528,116 @@
         } 
     }
 
+    async function abrirModalSegundaVia() { 
+        document.getElementById('modal-segunda-via').style.display = 'flex'; 
+        const tbody = document.querySelector('#tabela-segunda-via tbody'); 
+        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando documentos no servidor... <i class='fas fa-spinner fa-spin'></i></td></tr>"; 
+        
+        try { 
+            const payload = { tipo: 'listar_vendas_recentes' };
+            const res = await fetch(URL_BASE_2_PRINCIPAL, { method: 'POST', body: JSON.stringify(payload) }); 
+            const dados = await res.json(); 
+            tbody.innerHTML = ""; 
+            
+            if(!dados.vendas || dados.vendas.length === 0) { 
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Nenhum documento encontrado.</td></tr>"; 
+                return; 
+            } 
+            
+            dados.vendas.forEach(v => { 
+                const tr = document.createElement('tr'); 
+                tr.innerHTML = `
+                    <td>${v.data || '-'}</td>
+                    <td>${v.id}</td>
+                    <td style="font-weight:600;">${v.cliente}</td>
+                    <td><span class="badge badge-recibo" style="background:#e0e7ff; color:#0369a1;">OS (PDF)</span></td>
+                    <td><button onclick="buscarEImprimirPDFOS(event, '${v.id}')" style="background:var(--blue-header); color:white; border:none; padding:6px 12px; border-radius: 4px; cursor:pointer; font-weight:600;"><i class="fas fa-print"></i> Imprimir OS</button></td>
+                `;
+                tbody.appendChild(tr); 
+            }); 
+        } catch (e) { 
+            tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao buscar documentos.</td></tr>"; 
+        } 
+    }
+
+    async function buscarEImprimirPDFOS(event, idVenda) {
+    const btn = event.currentTarget;
+    const textoOriginal = btn.innerHTML;
+
+    btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Baixando...";
+    btn.disabled = true;
+
+    try {
+        const payload = { tipo: "buscar_pdf_os", idVenda: idVenda };
+
+        const res = await fetch(URL_BASE_2_PRINCIPAL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        const dados = await res.json();
+
+        if (!dados.sucesso) {
+            alert(dados.mensagem || "O arquivo PDF da Ordem de Serviço não foi encontrado.");
+            return;
+        }
+
+        const arquivoOS = dados.linkPdf || dados.pdfBase64 || dados.link || "";
+
+        if (!arquivoOS) {
+            alert("PDF localizado, mas o link retornou vazio.");
+            return;
+        }
+
+        // Quando for link do Google Drive ou URL normal
+        const arquivoTexto = String(arquivoOS || "").trim();
+
+if (
+    arquivoTexto.startsWith("http://") ||
+    arquivoTexto.startsWith("https://")
+) {
+    window.open(arquivoTexto, "_blank");
+    btn.innerHTML = "<i class='fas fa-check'></i> Aberto";
+    return;
+}
+
+if (!arquivoTexto.startsWith("data:application/pdf")) {
+    alert("O servidor retornou um valor inválido no lugar do PDF: " + arquivoTexto);
+    return;
+}
+        // Quando for PDF em base64/data URI
+        let iframe = document.getElementById('iframe-impressao-pdf');
+
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'iframe-impressao-pdf';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+        }
+
+        iframe.src = arquivoOS;
+
+        iframe.onload = function() {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                btn.innerHTML = "<i class='fas fa-check'></i> Impresso";
+            } catch (erroPrint) {
+                window.open(arquivoOS, "_blank");
+                btn.innerHTML = "<i class='fas fa-check'></i> Aberto";
+            }
+        };
+
+    } catch (e) {
+        alert("Erro ao conectar com o servidor para baixar a Ordem de Serviço.");
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        }, 3000);
+    }
+}
+
     async function reimprimirNFCe(event, idVenda) {
         const btn = event.currentTarget;
         const textoOriginal = btn.innerHTML;
@@ -1439,7 +1650,7 @@
             const dados = await res.json();
             
             if (dados.sucesso && dados.link) {
-                window.location.href = dados.link; // Abre na mesma janela para não dar erro
+                window.location.href = dados.link; 
             } else {
                 alert("Não foi possível consultar a nota na Sefaz: \n" + (dados.mensagem || "Erro desconhecido"));
             }

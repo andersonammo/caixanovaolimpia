@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAIXA NOVA OLIMPIA</title>
+    <title>ÓTICAS AMMO NOVA OLÍMPIA</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='bg' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%2300bfff'/><stop offset='100%' stop-color='%23006699'/></linearGradient></defs><rect width='100' height='100' rx='25' fill='url(%23bg)'/><text x='50' y='65' font-family='Inter, sans-serif' font-size='65' font-weight='900' fill='%23ffffff' text-anchor='middle'>A</text><text x='50' y='90' font-family='Inter, sans-serif' font-size='20' font-weight='bold' fill='%23e9ecef' text-anchor='middle' letter-spacing='1'>SAAS</text></svg>">
     
+    <link rel="preload" as="image" href="https://i.postimg.cc/nz9k8v8n/Untitled-design-%282%29.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -68,6 +69,13 @@
         .header-icons { display: flex; gap: 20px; font-size: 20px; align-items: center; }
         .header-icons i { cursor: pointer; transition: 0.3s; }
         .header-icons i:hover { transform: translateY(-2px); filter: brightness(1.2); text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+        .bell-wrapper { position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: 0.25s; }
+        .bell-wrapper:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+        .bell-wrapper.has-alert { animation: bellPulse 1.2s infinite; background: rgba(239, 68, 68, 0.22); }
+        .bell-wrapper.has-alert i { color: #fff3cd !important; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .bell-badge { position: absolute; top: -5px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: white; font-size: 10px; font-weight: 900; display: none; align-items: center; justify-content: center; border: 2px solid var(--blue-header); line-height: 1; }
+        .bell-wrapper.has-alert .bell-badge { display: flex; }
+        @keyframes bellPulse { 0%, 100% { transform: rotate(0deg) scale(1); } 15% { transform: rotate(-12deg) scale(1.06); } 30% { transform: rotate(12deg) scale(1.06); } 45% { transform: rotate(-8deg) scale(1.03); } 60% { transform: rotate(8deg) scale(1.03); } }
 
         .dropdown-content { display: none; position: absolute; top: 60px; left: 20px; background-color: white; min-width: 250px; box-shadow: var(--shadow-lg); z-index: 10000; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); }
         .dropdown-content a { color: var(--text-main); padding: 15px 20px; text-decoration: none; display: flex; align-items: center; gap: 15px; font-size: 14px; font-weight: 500; transition: 0.2s; border-bottom: 1px solid #f1f5f9; }
@@ -187,9 +195,18 @@
             #area-impressao { display: none; }
         }
         @media print {
+            html, body { margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; background: #fff !important; }
             body > *:not(#area-impressao) { display: none !important; }
-            #area-impressao { display: block !important; width: 80mm; margin: 0 auto; }
-            @page { margin: 0; size: 80mm auto; }
+            #area-impressao { display: block !important; margin: 0 auto !important; padding: 0 !important; background: #fff !important; }
+            #area-impressao.modo-termico { width: 80mm !important; }
+            #area-impressao.modo-a4 { width: 210mm !important; min-height: 0 !important; }
+            #area-impressao.modo-a4 .folha-carne { width: 210mm !important; margin: 0 auto !important; padding: 5mm 6mm !important; box-sizing: border-box !important; background: #fff !important; }
+            #area-impressao.modo-a4 .boleto-pro { width: 198mm !important; height: 92mm !important; min-height: 92mm !important; max-height: 92mm !important; margin: 0 0 2.5mm 0 !important; padding: 4mm 5mm !important; overflow: hidden !important; box-sizing: border-box !important; page-break-inside: avoid !important; break-inside: avoid !important; background: #fff !important; }
+            #area-impressao.modo-a4 .quebra-pagina-carne { page-break-after: always !important; break-after: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; }
+            #area-impressao.modo-a4 .quebra-pagina-carne:last-child { page-break-after: auto !important; break-after: auto !important; display: none !important; }
+            #area-impressao.modo-a4 .boleto-pro:nth-of-type(3n) { margin-bottom: 0 !important; }
+            #area-impressao.modo-a4 .sem-quebra-final { page-break-after: auto !important; break-after: auto !important; }
+            @page { size: A4 portrait; margin: 0; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -201,7 +218,7 @@
 <div id="tela-login">
     <div class="login-box">
         <div class="login-logo"><b style="font-size: 45px; line-height: 1; font-family: 'Inter', sans-serif;">A</b><span style="font-size: 13px; font-weight: 700; letter-spacing: 2px;">SAAS</span></div>
-        <h2>PDV NOVA OLÍMPIA</h2>
+        <h2>PDV AMMO NOVA OLÍMPIA</h2>
         <h3>Acesso Exclusivo Gerência</h3>
         <input type="text" id="login-user" placeholder="Usuário" autocomplete="off">
         <input type="password" id="login-pass" placeholder="Senha">
@@ -230,12 +247,16 @@
             <i class="fas fa-search"></i>
             <input type="text" id="input-filtro-tabela" placeholder="Pesquisar itens no carrinho..." onkeyup="filtrarCarrinho()">
         </div>
-        <span style="font-size: 13px; font-weight: 700; color: #fcd34d; letter-spacing: 0.5px;">AMMO PDV NOVA OLIMPIA</span>
+        <span style="font-size: 13px; font-weight: 700; color: #fcd34d; letter-spacing: 0.5px;">AMMO PDV - NOVA OLÍMPIA</span>
     </div>
     <div class="header-icons">
+        <div id="sino-boletos-vencidos" class="bell-wrapper" onclick="abrirNotificacoesBoletos()" title="Boletos vencidos para cobrança">
+            <i class="fas fa-bell" style="color:#ffffff;"></i>
+            <span id="badge-boletos-vencidos" class="bell-badge">0</span>
+        </div>
         <i class="fas fa-sync-alt" style="color: #34d399;" onclick="recarregarParametros()" title="Recarregar Parâmetros do Servidor"></i>
         <i class="fas fa-chart-line" style="color: #fbbf24;" onclick="window.open('https://lookerstudio.google.com/', '_blank')" title="Acessar Ammo Reports"></i>
-        <i class="fas fa-power-off" style="color: #f87171; margin-left: 10px;" onclick="location.reload()" title="Sair do Caixa (Logout)"></i>
+        <i class="fas fa-power-off" style="color: #f87171; margin-left: 10px;" onclick="sairSistema()" title="Sair do Sistema (Logout)"></i>
     </div>
 </header>
 
@@ -282,14 +303,17 @@
         <button class="side-btn" onclick="abrirModalClientes()"><i class="fas fa-users"></i>Cliente PF</button>
         <button class="side-btn" onclick="abrirModalNFCe()"><i class="fas fa-file-invoice-dollar"></i>NFC-e</button>
         <button class="side-btn" onclick="abrirModalSegundaVia()"><i class="fas fa-file-pdf" style="color: #38bdf8;"></i>2ª Via</button>
+        <button class="side-btn" onclick="abrirModalReceberBoletos()"><i class="fas fa-barcode" style="color:#f87171;"></i>Boletos</button>
         <button class="side-btn" onclick="abrirModalCaixa('sangria')" style="margin-top: 15px;"><i class="fas fa-hand-holding-usd"></i>Sangria</button>
         <button class="side-btn" onclick="abrirModalCaixa('despesa')"><i class="fas fa-receipt"></i>Despesas</button>
-        <button class="side-btn" style="margin-top: auto; background: var(--blue-header); color: white;" onclick="location.reload()"><i class="fas fa-sign-out-alt" style="color: white; text-shadow: none;"></i>Sair</button>
+        <button class="side-btn" style="margin-top: auto; background: var(--blue-header); color: white;" onclick="sairSistema()"><i class="fas fa-sign-out-alt" style="color: white; text-shadow: none;"></i>Sair</button>
     </aside>
 </div>
 
 <div id="modal-segunda-via" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-file-pdf" style="color: var(--blue-header);"></i> 2ª Via de Documentos e Notas</h3><button onclick="document.getElementById('modal-segunda-via').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-segunda-via"><thead><tr><th>Data</th><th>Nº Venda</th><th>Cliente</th><th>Tipo</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
-<div id="modal-parciais" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-search-dollar" style="color: var(--blue-header);"></i> Vendas Parciais Pendentes</h3><button onclick="document.getElementById('modal-parciais').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-parciais"><thead><tr><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Valor Total</th><th>Saldo Devedor</th></tr></thead><tbody></tbody></table></div></div>
+<div id="modal-parciais" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-search-dollar" style="color: var(--blue-header);"></i> Vendas Parciais Pendentes</h3><button onclick="document.getElementById('modal-parciais').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-parciais"><thead><tr><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Valor Total</th><th>Saldo Devedor</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>
+
+<div id="modal-receber-boletos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-barcode" style="color: var(--danger);"></i> Recebimento de Boletos Vencidos</h3><button onclick="document.getElementById('modal-receber-boletos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><div style="display:flex; gap:10px; margin-top:15px;"><input id="busca-boleto-recebimento" placeholder="Buscar vencido por cliente, CPF, venda ou boleto..." style="flex:1; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius-md);"><button onclick="carregarBoletosRecebimento()" style="background:var(--blue-header); color:white; border:none; border-radius:var(--radius-md); padding:0 18px; font-weight:700; cursor:pointer;">Buscar</button></div><table style="width:100%; margin-top:15px;" id="tabela-receber-boletos"><thead><tr><th>Vencimento</th><th>Cliente</th><th>Parcela</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-agrupada" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-layer-group" style="color: var(--blue-header);"></i> Pedidos Agrupados</h3><button onclick="document.getElementById('modal-agrupada').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-agrupada"><thead><tr><th>Cliente</th><th>Consultor</th><th>Total do Pedido</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-lista-produtos" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-box" style="color: var(--blue-header);"></i> Lista de Produtos</h3><button onclick="document.getElementById('modal-lista-produtos').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-produtos"><thead><tr><th>Nome do Produto</th><th>Valor (R$)</th><th>Ação</th></tr></thead><tbody></tbody></table></div></div>
 <div id="modal-lista-clientes" class="modal-overlay"><div class="modal-box-parciais"><div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gray-bg); padding-bottom:15px;"><h3 style="margin:0; color: var(--dark-sidebar); font-size: 18px;"><i class="fas fa-id-card" style="color: var(--blue-header);"></i> Clientes Cadastrados</h3><button onclick="document.getElementById('modal-lista-clientes').style.display='none'" style="background:var(--danger); color:white; border:none; padding:8px 16px; cursor:pointer; border-radius:var(--radius-md); font-weight:600;">X FECHAR</button></div><table style="width:100%; margin-top:15px;" id="tabela-lista-clientes"><thead><tr><th>Nome</th><th>Telefone</th><th>CPF</th></tr></thead><tbody></tbody></table></div></div>
@@ -392,8 +416,27 @@
                     <div class="pay-input-group"><label><i class="fas fa-money-bill-wave" style="color:var(--green-text)"></i> Dinheiro</label><input type="number" id="v-out-din" class="in-pag" step="0.01" oninput="calcularCaixa()"></div>
                     <div class="pay-input-group"><label><i class="fab fa-pix" style="color:#32bcad"></i> PIX</label><input type="number" id="v-out-pix" class="in-pag" step="0.01" oninput="calcularCaixa()"></div>
                     <div class="pay-input-group"><label><i class="fas fa-barcode" style="color:#64748b"></i> Boleto</label><input type="number" id="v-out-boleto" class="in-pag" step="0.01" oninput="calcularCaixa()"></div>
+                    <div class="pay-input-group" id="box-parcelas-boleto" style="background:#f8fafc; padding:8px; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-top: 10px;">
+                        <label style="font-weight:600; color:var(--text-main);"><i class="fas fa-calendar-alt" style="color:#64748b"></i> Parcelas Boleto</label>
+                        <select id="v-boleto-parcelas" onchange="calcularCaixa()" style="width:80px; text-align:center; padding:6px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-weight:600;">
+                            <option value="1">1x</option>
+                            <option value="2">2x</option>
+                            <option value="3">3x</option>
+                            <option value="4">4x</option>
+                            <option value="5">5x</option>
+                            <option value="6" selected>6x</option>
+                        </select>
+                    </div>
+                    <div class="pay-input-group" id="box-vencimento-boleto" style="background:#fff7ed; padding:8px; border: 1px solid #fed7aa; border-radius: var(--radius-md); margin-top: 10px;">
+                        <label style="font-weight:700; color:#9a3412;"><i class="fas fa-calendar-check" style="color:#ea580c"></i> Vencimento</label>
+                        <select id="v-boleto-dia-vencimento" onchange="calcularCaixa()" style="width:90px; text-align:center; padding:6px; border:1px solid #fdba74; border-radius:var(--radius-md); font-weight:800; color:#9a3412; background:white;">
+                            <option value="">Escolha</option>
+                            <option value="1">Dia 1</option>
+                            <option value="7">Dia 7</option>
+                            <option value="15">Dia 15</option>
+                        </select>
+                    </div>
                     <div class="pay-input-group"><label><i class="fas fa-star" style="color:#f59e0b"></i> Bonuscred</label><input type="number" id="v-out-bonuscred" class="in-pag" step="0.01" oninput="calcularCaixa()"></div>
-                    <div class="pay-input-group"><label><i class="fas fa-book" style="color:#8b5cf6"></i> Crediário</label><input type="number" id="v-out-cred" class="in-pag" step="0.01" oninput="calcularCaixa()"></div>
                 </div>
             </div>
             <div class="mp-summary">
@@ -406,8 +449,8 @@
                 <div class="mp-grid-pagos">
                     <div class="mp-grid-title"><i class="fas fa-print"></i> Opções de Impressão</div>
                     <div style="padding:10px 15px; font-size:12px; color: #475569; display:flex; flex-direction:column; gap:8px;">
-                        <label style="cursor:pointer; font-weight:600; color:var(--dark-sidebar); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-recibo" style="width:16px; height:16px; accent-color: var(--dark-sidebar);"> Imprimir Recibo PDV</label>
-                        <label style="cursor:pointer; font-weight:600; color:var(--blue-header); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-nfce" style="width:16px; height:16px; accent-color: var(--blue-header);"> Emitir Cupom Fiscal (NFC-e)</label>
+                        <label style="cursor:pointer; font-weight:600; color:var(--dark-sidebar); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-recibo" checked style="width:16px; height:16px; accent-color: var(--dark-sidebar);"> Imprimir Recibo PDV</label>
+                        <label style="cursor:pointer; font-weight:600; color:var(--blue-header); display:flex; align-items:center; gap:6px;"><input type="checkbox" id="chk-imprimir-nfce" checked style="width:16px; height:16px; accent-color: var(--blue-header);"> Emitir Cupom Fiscal (NFC-e)</label>
                     </div>
                 </div>
             </div>
@@ -431,6 +474,7 @@
     // 1. DEFINA AQUI AS URLs DO SEU GOOGLE APPS SCRIPT (WEB APP)
     // =========================================================================
     const URL_BASE_2_PRINCIPAL = "https://script.google.com/macros/s/AKfycbyt7EnnYa60CW4T200XHZacfHqDPHQ8OFHexSwMf14jR-W_eqDh-NMhaY_bCxaze2RLpA/exec";
+    const LOGO_EMPRESA_URL = "https://i.postimg.cc/nz9k8v8n/Untitled-design-%282%29.png";
 
     // --- VARIÁVEIS DA SENHA MASTER E CONTROLES ---
     // Defina as senhas e quem é o dono de cada senha.
@@ -443,6 +487,8 @@
     let adminAutorizador = ""; 
     let bloqueioTempoIgnorado = false;
     let bloqueioQuebraIgnorado = false;
+    let liberacaoBoletoEntrada = false;
+    let motivoLiberacaoBoleto = "";
     let motivoBloqueioAtual = ""; 
 
     let produtosLista = [];
@@ -452,6 +498,75 @@
     let cxFundoInicial = 0;
     let cxUltimoFechamento = 0;
     let cxResumoAtual = null;
+    let boletosRecebimentoCache = {};
+    let boletosVencidosCache = [];
+    let ultimaQtdBoletosVencidos = 0;
+
+    // =========================================================================
+    // SESSÃO LOCAL E TRAVA DE ABERTURA ÚNICA POR DIA
+    // Mantém login/caixa ao fechar a aba acidentalmente no mesmo navegador.
+    // =========================================================================
+    const CHAVE_LOGIN_PDV = "AMMO_PDV_LOGIN_ATIVO";
+    const CHAVE_CAIXA_PDV = "AMMO_PDV_CAIXA_DIA";
+
+    function dataHojeISO() {
+        const agora = new Date();
+        const ano = agora.getFullYear();
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
+        const dia = String(agora.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    function salvarLoginLocal(nomeColaborador, usuario) {
+        localStorage.setItem(CHAVE_LOGIN_PDV, JSON.stringify({
+            nome: nomeColaborador,
+            usuario: usuario || nomeColaborador,
+            data: dataHojeISO(),
+            salvoEm: new Date().toISOString()
+        }));
+    }
+
+    function obterLoginLocal() {
+        try {
+            const dados = JSON.parse(localStorage.getItem(CHAVE_LOGIN_PDV) || "null");
+            if (!dados || dados.data !== dataHojeISO()) return null;
+            return dados;
+        } catch(e) { return null; }
+    }
+
+    function salvarCaixaLocal(idSessao, operador, valorInicial) {
+        localStorage.setItem(CHAVE_CAIXA_PDV, JSON.stringify({
+            data: dataHojeISO(),
+            idSessao: idSessao || ("LOCAL-" + Date.now()),
+            operador: operador,
+            valorInicial: parseFloat(valorInicial || 0),
+            abertoEm: new Date().toISOString()
+        }));
+    }
+
+    function obterCaixaLocalHoje() {
+        try {
+            const dados = JSON.parse(localStorage.getItem(CHAVE_CAIXA_PDV) || "null");
+            if (!dados || dados.data !== dataHojeISO()) return null;
+            return dados;
+        } catch(e) { return null; }
+    }
+
+    function restaurarCaixaLocalSeExistir() {
+        const caixa = obterCaixaLocalHoje();
+        if (!caixa) return false;
+        cxSessao = caixa.idSessao;
+        cxFundoInicial = parseFloat(caixa.valorInicial || 0);
+        const sel = document.getElementById('vendedor-select');
+        if (sel && caixa.operador) sel.value = caixa.operador;
+        return true;
+    }
+
+    function sairSistema() {
+        localStorage.removeItem(CHAVE_LOGIN_PDV);
+        location.reload();
+    }
+
 
     // =========================================================================
     // FUNÇÕES DE COMUNICAÇÃO E UTILITÁRIOS
@@ -490,16 +605,40 @@
     // =========================================================================
     // O SEGREDO DO NATIVEFIER: IMPRESSÃO DIRETA SEM POPUPS!
     // =========================================================================
-    function imprimirHTMLSeguro(conteudoHtml) {
+    function logoEmpresaHTML(maxWidth = '42mm', maxHeight = '18mm') {
+        return `<img src="${LOGO_EMPRESA_URL}" alt="Logo Óticas AMMO" class="logo-impressao" style="max-width:${maxWidth}; max-height:${maxHeight}; object-fit:contain; margin:0 auto 5px; display:block;" onerror="this.outerHTML='<div style=&quot;text-align:center;font-weight:900;font-size:16px;border:1px solid #111;padding:4px;margin:0 auto 5px;max-width:${maxWidth};&quot;>ÓTICAS AMMO</div>'">`;
+    }
+
+    function aguardarImagensImpressao(container, limiteMs = 3000) {
+        const imagens = Array.from(container.querySelectorAll('img'));
+        if (!imagens.length) return Promise.resolve();
+
+        const promessas = imagens.map(img => new Promise(resolve => {
+            if (img.complete && img.naturalWidth > 0) return resolve();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+        }));
+
+        return Promise.race([
+            Promise.all(promessas),
+            new Promise(resolve => setTimeout(resolve, limiteMs))
+        ]);
+    }
+
+    async function imprimirHTMLSeguro(conteudoHtml, modo = 'termico') {
         const area = document.getElementById('area-impressao');
+        area.className = modo === 'a4' ? 'modo-a4' : 'modo-termico';
         area.innerHTML = conteudoHtml;
         
-        // Aguarda 100ms para o navegador renderizar o texto e chama a impressora
+        // Força o navegador/app a carregar a logo antes da janela de impressão.
+        await aguardarImagensImpressao(area, 3000);
+        await new Promise(resolve => setTimeout(resolve, 250));
+
+        window.print();
         setTimeout(() => {
-            window.print();
-            // Limpa tudo depois de imprimir para voltar a tela normal
             area.innerHTML = '';
-        }, 100);
+            area.className = '';
+        }, 500);
     }
 
     // =========================================================================
@@ -533,18 +672,22 @@
 
             if (dataLogin.status === 'sucesso' || dataLogin.logado === true) {
                 const nomeColaborador = dataLogin.nome || (user === 'admin' ? "Administrador" : "Consultor");
-                document.getElementById('login-user').value = nomeColaborador; 
+                document.getElementById('login-user').value = nomeColaborador;
+                salvarLoginLocal(nomeColaborador, user);
                 document.getElementById('tela-login').style.display = 'none';
                 document.getElementById('tela-loading').style.display = 'flex';
                 
                 await carregarDados();
                 
+                if (restaurarCaixaLocalSeExistir()) {
+                    document.getElementById('tela-loading').style.display = 'none';
+                    setTimeout(verificarBoletosVencidos, 600);
+                    return;
+                }
+
                 try {
                     const resCx = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=status_caixa&vendedor=${encodeURIComponent(nomeColaborador)}`);
                     const cxData = await resCx.json();
-                    
-                    // TRAVA DEFINITIVA: SEMPRE EXIGE ABERTURA! 
-                    // O sistema vai forçar você a confirmar o fundo de caixa.
                     cxUltimoFechamento = parseFloat(cxData.ultimoFechamento) || 0;
                     document.getElementById('tela-loading').style.display = 'none';
                     abrirModalCaixa('abertura');
@@ -600,6 +743,16 @@
     // FUNÇÕES DO CAIXA E VALIDAÇÃO MASTER
     // =========================================================================
     function abrirModalCaixa(tipo) {
+        const caixaHoje = obterCaixaLocalHoje();
+        if (tipo === 'abertura' && caixaHoje) {
+            cxSessao = caixaHoje.idSessao;
+            cxFundoInicial = parseFloat(caixaHoje.valorInicial || 0);
+            alert(`Caixa já aberto hoje por ${caixaHoje.operador || 'operador'} às ${new Date(caixaHoje.abertoEm).toLocaleTimeString('pt-BR')}.
+
+Por segurança, a abertura só pode ser feita 1 vez por dia. A sessão foi restaurada.`);
+            return;
+        }
+
         if (tipo !== 'abertura' && !cxSessao) { 
             alert("Atenção! O caixa está fechado. Realize a abertura para continuar."); 
             tipo = 'abertura'; 
@@ -651,12 +804,22 @@
 
         try {
             if(tipoOperacaoAtual === 'abertura') {
-                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor }; 
+                const caixaHoje = obterCaixaLocalHoje();
+                if (caixaHoje) {
+                    cxSessao = caixaHoje.idSessao;
+                    cxFundoInicial = parseFloat(caixaHoje.valorInicial || 0);
+                    alert("Este caixa já foi aberto hoje. A sessão anterior foi restaurada e uma nova abertura foi bloqueada.");
+                    document.getElementById('modal-operacao-caixa').style.display = 'none';
+                    return;
+                }
+                const payload = { tipo: 'abrir_caixa', vendedor: operador, valorInicial: valor, travaDiaria: true, dataAbertura: dataHojeISO() }; 
                 const res = await enviarDadosServidor(payload); 
                 const data = await res.json(); 
-                cxSessao = data.idSessao; 
-                cxFundoInicial = valor; 
+                cxSessao = data.idSessao || ("LOCAL-" + Date.now()); 
+                cxFundoInicial = valor;
+                salvarCaixaLocal(cxSessao, operador, valor);
                 imprimirComprovanteSeguro("ABERTURA DE CAIXA", valor, desc, operador);
+                setTimeout(verificarBoletosVencidos, 900);
             } else if (tipoOperacaoAtual === 'sangria' || tipoOperacaoAtual === 'despesa') {
                 if(!cxSessao) { 
                     alert("Sessão do caixa não identificada."); 
@@ -717,6 +880,11 @@
             } else if (motivoBloqueioAtual === 'quebra') { 
                 bloqueioQuebraIgnorado = true; 
                 confirmarFechamentoDefinitivo(); 
+            } else if (motivoBloqueioAtual === 'boleto_entrada') {
+                liberacaoBoletoEntrada = true;
+                motivoLiberacaoBoleto = `LIBERADO POR ${adminAutorizador} - ENTRADA MENOR QUE 50%`;
+                document.getElementById('senha-master').value = '';
+                confirmarVendaFechada();
             }
         } else {
             alert("Senha Master incorreta!"); 
@@ -731,9 +899,9 @@
         const hora = agora.getHours(); 
         const minuto = agora.getMinutes();
         
-        if ((hora < 17 || (hora === 17 && minuto < 15)) && !bloqueioTempoIgnorado) {
+        if ((hora < 17 || (hora === 17 && minuto < 50)) && !bloqueioTempoIgnorado) {
             motivoBloqueioAtual = 'horario'; 
-            document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:15 requer a senha Master."; 
+            document.getElementById('msg-auth-master').innerText = "O fechamento antes das 17:50 requer a senha Master."; 
             document.getElementById('modal-auth-master').style.display = 'flex'; 
             document.getElementById('senha-master').value = ''; 
             return; 
@@ -857,7 +1025,7 @@
         const html = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLIMPIA</h2>
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
                     <p style="margin: 2px 0; font-size: 11px; font-weight: bold;">VALE - QUEBRA DE CAIXA</p>
                 </div>
                 <div style="margin-bottom: 10px;">
@@ -900,7 +1068,7 @@
         const html = `
             <div style="font-family: 'Courier New', Courier, monospace; color: #000; width: 70mm; font-size: 11px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
-                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLIMPIA</h2>
+                    <h2 style="margin: 0; font-size: 15px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
                     <p style="margin: 2px 0;">RELATÓRIO Z - FECHAMENTO DE CAIXA</p>
                 </div>
                 <div>
@@ -931,13 +1099,327 @@
         imprimirHTMLSeguro(html);
     }
 
+
+    function escaparHTML(valor) {
+        return String(valor ?? '').replace(/[&<>'"]/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
+        });
+    }
+
+    function formatarMoedaBR(valor) {
+        return (parseFloat(valor || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function somarMeses(data, meses) {
+        const d = new Date(data.getTime());
+        d.setMonth(d.getMonth() + meses);
+        return d;
+    }
+
+    function imprimirComprovantePagamento(payload, metodosDetalhados) {
+        const dataAtual = new Date().toLocaleString('pt-BR');
+        const itensHtml = (payload.itens || []).map(item => `
+            <tr>
+                <td style="padding:3px 0; text-align:left;">${item.qtd || 1}x ${escaparHTML(item.nome || 'Produto')}</td>
+                <td style="padding:3px 0; text-align:right;">${formatarMoedaBR(item.total || item.valor || 0)}</td>
+            </tr>`).join('');
+        const pagamentosHtml = (metodosDetalhados || []).map(p => `
+            <div style="display:flex; justify-content:space-between; margin:3px 0;">
+                <span>${escaparHTML(p.nome)}</span><strong>${formatarMoedaBR(p.valor)}</strong>
+            </div>`).join('');
+        const html = `
+            <div style="font-family:'Courier New', Courier, monospace; color:#000; width:72mm; font-size:11px; margin:0 auto; padding-top:8px;">
+                <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:8px; margin-bottom:8px;">
+                    ${logoEmpresaHTML('42mm', '18mm')}
+                    <h2 style="margin:0; font-size:15px; font-weight:900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
+                    <p style="margin:2px 0; font-size:10px;">COMPROVANTE DE PAGAMENTO</p>
+                    <p style="margin:2px 0; font-size:10px;">Documento não fiscal</p>
+                </div>
+                <p style="margin:3px 0;"><strong>Venda:</strong> ${escaparHTML(payload.idVenda)}</p>
+                <p style="margin:3px 0;"><strong>Data/Hora:</strong> ${dataAtual}</p>
+                <p style="margin:3px 0;"><strong>Cliente:</strong> ${escaparHTML(payload.nomeCliente)}</p>
+                <p style="margin:3px 0;"><strong>CPF:</strong> ${escaparHTML(payload.cpf || 'Não Informado')}</p>
+                <p style="margin:3px 0;"><strong>Vendedor:</strong> ${escaparHTML(payload.vendedor)}</p>
+                <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:6px 0; margin:8px 0;">
+                    <table style="width:100%; border-collapse:collapse;">${itensHtml}</table>
+                </div>
+                <div style="margin:8px 0;">
+                    <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><strong>${formatarMoedaBR(payload.subtotal)}</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Desconto</span><strong>${formatarMoedaBR(payload.desconto)}</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Acréscimo</span><strong>${formatarMoedaBR(payload.acrescimo)}</strong></div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; border-top:1px solid #000; margin-top:5px; padding-top:5px;"><span>TOTAL</span><strong>${formatarMoedaBR(payload.valorTotal)}</strong></div>
+                </div>
+                <div style="border:1px dashed #000; padding:7px; margin:8px 0;">
+                    <strong>FORMAS DE PAGAMENTO</strong>
+                    ${pagamentosHtml || '<p style="margin:4px 0;">Pagamento parcial / a prazo</p>'}
+                    <div style="display:flex; justify-content:space-between; border-top:1px dashed #000; margin-top:5px; padding-top:5px;"><span>Pago</span><strong>${formatarMoedaBR(payload.valorPago)}</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Saldo devedor</span><strong>${formatarMoedaBR(payload.saldoDevedor || 0)}</strong></div>
+                </div>
+                <div style="margin-top:35px; border-top:1px solid #000; text-align:center; font-size:10px; padding-top:5px;">Assinatura do Cliente</div>
+                <p style="text-align:center; font-size:9px; margin-top:12px;">Obrigado pela preferência.</p>
+            </div>`;
+        imprimirHTMLSeguro(html);
+    }
+
+    function gerarLinhaDigitavelInterna(idVenda, parcela, vencimento, valor) {
+        const base = String(idVenda || 'AMMO').replace(/\D/g, '').padEnd(20, '0').slice(0, 20);
+        const valorCentavos = String(Math.round((parseFloat(valor || 0)) * 100)).padStart(10, '0');
+        const data = vencimento.toISOString().slice(0,10).replace(/-/g,'');
+        return `${base.slice(0,5)}.${base.slice(5,10)} ${base.slice(10,15)}.${base.slice(15,20)} ${data.slice(0,5)}.${data.slice(5)} ${String(parcela).padStart(2,'0')} ${valorCentavos}`;
+    }
+
+    function gerarCodigoBarrasVisual(texto) {
+        let barras = '';
+        const limpo = String(texto || '').replace(/\D/g,'').slice(0, 70);
+        for (let i = 0; i < limpo.length; i++) {
+            const n = parseInt(limpo[i], 10) || 1;
+            const largura = (n % 4) + 1;
+            barras += `<span style="display:inline-block; width:${largura}px; height:48px; background:#000; margin-right:1px;"></span>`;
+        }
+        return barras;
+    }
+
+
+    function calcularPrimeiroVencimentoBoleto(diaVencimento) {
+        const dia = parseInt(diaVencimento);
+        if (![1, 7, 15].includes(dia)) return null;
+        const hoje = new Date();
+        const venc = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
+        venc.setHours(12, 0, 0, 0);
+        const hojeLimpo = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        if (venc < hojeLimpo) venc.setMonth(venc.getMonth() + 1);
+        return venc;
+    }
+
+    function somarMesesMantendoDia(dataBase, meses, diaVencimento) {
+        const base = new Date(dataBase);
+        const venc = new Date(base.getFullYear(), base.getMonth() + meses, parseInt(diaVencimento));
+        venc.setHours(12, 0, 0, 0);
+        return venc;
+    }
+
+    function gerarBoletosVenda(payload, valorBoleto, parcelasBoleto, diaVencimentoBoleto) {
+        valorBoleto = parseFloat(valorBoleto || 0);
+        parcelasBoleto = Math.min(Math.max(parseInt(parcelasBoleto) || 1, 1), 6);
+        const diaEscolhido = parseInt(diaVencimentoBoleto || payload.diaVencimentoBoleto || 0);
+        if (valorBoleto <= 0) return [];
+        if (![1, 7, 15].includes(diaEscolhido)) {
+            alert('Escolha a data de vencimento do boleto: dia 1, dia 7 ou dia 15.');
+            return [];
+        }
+
+        const valorParcela = Math.round((valorBoleto / parcelasBoleto) * 100) / 100;
+        const diferencaCentavos = Math.round((valorBoleto - (valorParcela * parcelasBoleto)) * 100) / 100;
+        const hoje = new Date();
+        const primeiroVencimento = calcularPrimeiroVencimentoBoleto(diaEscolhido);
+        const boletos = [];
+
+        for (let i = 1; i <= parcelasBoleto; i++) {
+            const venc = somarMesesMantendoDia(primeiroVencimento, i - 1, diaEscolhido);
+            const valorFinalParcela = i === parcelasBoleto ? Math.round((valorParcela + diferencaCentavos) * 100) / 100 : valorParcela;
+            const linha = gerarLinhaDigitavelInterna(payload.idVenda, i, venc, valorFinalParcela);
+
+            boletos.push({
+                idBoleto: `${payload.idVenda}-${String(i).padStart(2,'0')}`,
+                idVenda: payload.idVenda,
+                parcela: i,
+                totalParcelas: parcelasBoleto,
+                cliente: payload.nomeCliente,
+                cpf: payload.cpf || 'Não Informado',
+                vendedor: payload.vendedor,
+                valor: valorFinalParcela,
+                valorOriginalBoleto: valorBoleto,
+                emissao: hoje.toISOString().slice(0,10),
+                diaVencimentoBoleto: diaEscolhido,
+                vencimento: venc.toISOString().slice(0,10),
+                vencimentoBR: venc.toLocaleDateString('pt-BR'),
+                status: 'ABERTO',
+                linhaDigitavel: linha,
+                nossoNumero: `${payload.idVenda}-${String(i).padStart(2,'0')}`,
+                observacao: `Boleto interno/carnê de cobrança - vencimento todo dia ${diaEscolhido}`
+            });
+        }
+        return boletos;
+    }
+
+    async function salvarBoletosServidor(boletos, payloadVenda) {
+        if (!Array.isArray(boletos) || boletos.length === 0) return;
+        try {
+            await enviarDadosServidor({
+                tipo: 'registrar_boletos',
+                acao: 'registrar_boletos',
+                idVenda: payloadVenda.idVenda,
+                nomeCliente: payloadVenda.nomeCliente,
+                cpf: payloadVenda.cpf || 'Não Informado',
+                vendedor: payloadVenda.vendedor,
+                valorTotal: payloadVenda.valorTotal,
+                valorBoleto: payloadVenda.valorBoleto,
+                parcelasBoleto: payloadVenda.parcelasBoleto,
+                boletos: boletos
+            });
+        } catch(e) {
+            console.warn('Não foi possível salvar os boletos no servidor.', e);
+            alert('A venda foi concluída, mas os boletos não foram confirmados no banco. Confira a internet e registre novamente se necessário.');
+        }
+    }
+
+    function atualizarSinoBoletosVencidos(lista) {
+        boletosVencidosCache = Array.isArray(lista) ? lista : [];
+        const qtd = boletosVencidosCache.length;
+        const sino = document.getElementById('sino-boletos-vencidos');
+        const badge = document.getElementById('badge-boletos-vencidos');
+        if (!sino || !badge) return;
+        badge.textContent = qtd > 99 ? '99+' : String(qtd);
+        if (qtd > 0) {
+            sino.classList.add('has-alert');
+            if (qtd !== ultimaQtdBoletosVencidos) tocarSomNotificacaoBoleto();
+        } else {
+            sino.classList.remove('has-alert');
+        }
+        ultimaQtdBoletosVencidos = qtd;
+    }
+
+    function tocarSomNotificacaoBoleto() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const tocar = (freq, inicio, duracao) => {
+                const osc = ctx.createOscillator();
+                const ganho = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + inicio);
+                ganho.gain.setValueAtTime(0.0001, ctx.currentTime + inicio);
+                ganho.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + inicio + 0.03);
+                ganho.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + inicio + duracao);
+                osc.connect(ganho);
+                ganho.connect(ctx.destination);
+                osc.start(ctx.currentTime + inicio);
+                osc.stop(ctx.currentTime + inicio + duracao + 0.03);
+            };
+            tocar(880, 0.00, 0.18);
+            tocar(1175, 0.22, 0.22);
+        } catch(e) {
+            console.warn('Som de notificação bloqueado pelo navegador até a primeira interação do usuário.', e);
+        }
+    }
+
+    async function abrirNotificacoesBoletos() {
+        if (!boletosVencidosCache.length) {
+            await verificarBoletosVencidos(false);
+        }
+        abrirModalReceberBoletos();
+    }
+
+    async function verificarBoletosVencidos(mostrarAlerta = true) {
+        const operador = document.getElementById('vendedor-select')?.value || document.getElementById('login-user')?.value || '';
+        try {
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=boletos_vencidos&acao=boletos_vencidos&data=${dataHojeISO()}&vendedor=${encodeURIComponent(operador)}&nocache=${Date.now()}`);
+            const dados = await res.json();
+            const lista = Array.isArray(dados) ? dados : (dados.boletos || dados.vencidos || []);
+            atualizarSinoBoletosVencidos(lista);
+            if (!Array.isArray(lista) || lista.length === 0) return;
+
+            const total = lista.reduce((s, b) => s + (parseFloat(b.valor || b.Valor || 0) || 0), 0);
+            const linhas = lista.slice(0, 10).map(b => {
+                const cliente = b.cliente || b.Cliente || b.nomeCliente || 'Cliente não informado';
+                const venc = b.vencimentoBR || b.vencimento || b.Vencimento || '-';
+                const valor = parseFloat(b.valor || b.Valor || 0) || 0;
+                return `• ${cliente} | Venc.: ${venc} | ${formatarMoedaBR(valor)}`;
+            }).join('\n');
+
+            const mais = lista.length > 10 ? `\n... e mais ${lista.length - 10} boleto(s).` : '';
+            if (mostrarAlerta) {
+                alert(`🔔 BOLETOS VENCIDOS PARA COBRANÇA DIÁRIA\n\nTotal vencido: ${formatarMoedaBR(total)}\nQuantidade: ${lista.length}\n\n${linhas}${mais}\n\nClique no sino do cabeçalho ou no botão Boletos para fazer a baixa.`);
+            }
+        } catch(e) {
+            atualizarSinoBoletosVencidos([]);
+            console.warn('Consulta de boletos vencidos indisponível.', e);
+        }
+    }
+
+    function imprimirCarneBoleto(payload, valorBoleto, parcelasBoleto, boletosGerados = null) {
+        valorBoleto = parseFloat(valorBoleto || 0);
+        parcelasBoleto = Math.min(Math.max(parseInt(parcelasBoleto) || 1, 1), 6);
+        if (valorBoleto <= 0) return;
+
+        const boletos = Array.isArray(boletosGerados) && boletosGerados.length ? boletosGerados : gerarBoletosVenda(payload, valorBoleto, parcelasBoleto);
+        const hoje = new Date();
+        let htmlCarne = '<div class="folha-carne">';
+
+        boletos.forEach((boleto, idx) => {
+            const i = boleto.parcela || (idx + 1);
+            const vencTxt = boleto.vencimentoBR || boleto.vencimento || '-';
+            const emissaoTxt = hoje.toLocaleDateString('pt-BR');
+            const nossoNumero = boleto.nossoNumero || boleto.idBoleto || `${payload.idVenda}-${String(i).padStart(2,'0')}`;
+            const linha = boleto.linhaDigitavel || gerarLinhaDigitavelInterna(payload.idVenda, i, new Date(boleto.vencimento), boleto.valor);
+            const barras = gerarCodigoBarrasVisual(linha);
+            const quebraDepois = ((idx + 1) % 3 === 0 && (idx + 1) < boletos.length) ? '<div class="quebra-pagina-carne"></div>' : '';
+
+            htmlCarne += `
+                <div class="boleto-pro sem-quebra-final" style="font-family:Arial, Helvetica, sans-serif; color:#000; border:1px solid #111; border-radius:2px;">
+                    <div style="display:grid; grid-template-columns: 38mm 1fr 37mm; align-items:center; border-bottom:2px solid #111; min-height:14mm;">
+                        <div style="padding:1.5mm 2mm; border-right:1px solid #111; display:flex; align-items:center; justify-content:center;">
+                            ${logoEmpresaHTML('33mm', '11mm')}
+                        </div>
+                        <div style="padding:1.5mm 3mm; border-right:1px solid #111;">
+                            <div style="font-size:15px; font-weight:900; letter-spacing:.2px;">ÓTICAS AMMO</div>
+                            <div style="font-size:8px; margin-top:1px;">Carnê/Boleto interno de cobrança - Documento não fiscal</div>
+                            <div style="font-size:8px; margin-top:1px; font-weight:800; color:#9a3412;">Vencimento escolhido: dia ${boleto.diaVencimentoBoleto || payload.diaVencimentoBoleto || '-'}</div>
+                            <div style="font-size:8px; margin-top:1px;">Venda: <strong>${escaparHTML(payload.idVenda)}</strong> &nbsp; Emissão: <strong>${emissaoTxt}</strong></div>
+                        </div>
+                        <div style="text-align:center; padding:1.5mm 2mm;">
+                            <div style="font-size:7px; text-transform:uppercase;">Parcela</div>
+                            <div style="font-size:19px; font-weight:900; line-height:1;">${i}/${boleto.totalParcelas || parcelasBoleto}</div>
+                            <div style="font-size:7px; margin-top:1mm;">Nosso Nº ${escaparHTML(nossoNumero)}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1.25fr .75fr .75fr .75fr; border-bottom:1px solid #111; min-height:13mm;">
+                        <div style="padding:1.8mm 2.5mm; border-right:1px solid #111;"><small>Cliente</small><br><strong>${escaparHTML(payload.nomeCliente)}</strong><br><span style="font-size:8px;">CPF: ${escaparHTML(payload.cpf || 'Não Informado')}</span></div>
+                        <div style="padding:1.8mm 2.5mm; border-right:1px solid #111;"><small>Vencimento</small><br><strong style="font-size:14px;">${vencTxt}</strong></div>
+                        <div style="padding:1.8mm 2.5mm; border-right:1px solid #111;"><small>Valor do Documento</small><br><strong style="font-size:14px;">${formatarMoedaBR(boleto.valor)}</strong></div>
+                        <div style="padding:1.8mm 2.5mm;"><small>Forma</small><br><strong>Boleto ${boleto.totalParcelas || parcelasBoleto}x</strong></div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 52mm; min-height:36mm;">
+                        <div style="padding:2mm 3mm; border-right:1px solid #111;">
+                            <div style="font-size:9px; font-weight:bold; margin-bottom:1mm;">Linha digitável</div>
+                            <div style="font-size:11px; letter-spacing:.5px; border:1px solid #111; padding:1.2mm; font-weight:bold;">${escaparHTML(linha)}</div>
+                            <div style="margin-top:2mm; height:13mm; display:flex; align-items:end; overflow:hidden;">${barras}</div>
+                            <div style="font-size:7px; margin-top:1mm;">Código interno para conferência. Recebimento deve ser baixado no sistema.</div>
+                        </div>
+                        <div style="padding:2mm 3mm; font-size:8.5px; line-height:1.35;">
+                            <strong>RECIBO DO SACADO</strong><br>
+                            Cliente: ${escaparHTML(payload.nomeCliente)}<br>
+                            Parcela: ${i}/${boleto.totalParcelas || parcelasBoleto}<br>
+                            Vencimento: ${vencTxt}<br>
+                            Valor: ${formatarMoedaBR(boleto.valor)}<br>
+                            Vendedor: ${escaparHTML(payload.vendedor)}<br>
+                            Status: ${escaparHTML(boleto.status || 'ABERTO')}
+                            <div style="margin-top:9mm; border-top:1px solid #000; text-align:center; padding-top:1mm;">Assinatura / Data de recebimento</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8mm; padding:2mm 3mm; font-size:8px;">
+                        <div style="border-top:1px solid #000; text-align:center; padding-top:1mm;">Assinatura do Cliente</div>
+                        <div style="border-top:1px solid #000; text-align:center; padding-top:1mm;">Recebido por / Data</div>
+                    </div>
+                </div>${quebraDepois}`;
+        });
+
+        htmlCarne += '</div>';
+        imprimirHTMLSeguro(htmlCarne, 'a4');
+    }
+
     function imprimirComprovanteSeguro(tipo, valor, desc, operador) {
         const dataAtual = new Date().toLocaleString('pt-BR');
         
         const html = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #000; width: 70mm; font-size: 12px; margin: 0 auto; padding-top: 10px;">
                 <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 16px; font-weight: 900;">ÓTICAS AMMO NOVA OLIMPIA</h2>
+                    ${logoEmpresaHTML('42mm', '18mm')}
+                    <h2 style="margin: 0; font-size: 16px; font-weight: 900;">ÓTICAS AMMO NOVA OLÍMPIA</h2>
                     <p style="margin: 2px 0; font-size: 10px;">COMPROVANTE DE OPERAÇÃO DE CAIXA</p>
                     <p style="margin: 2px 0; font-size: 10px;">Documento Gerencial Interno</p>
                 </div>
@@ -978,7 +1460,7 @@
         return `
             <div style="font-family: Arial, sans-serif; color:#111827; width:190mm; min-height:260mm; padding:16mm; box-sizing:border-box; background:#fff;">
                 <div style="text-align:center; border-bottom:3px solid #0099cc; padding-bottom:12px; margin-bottom:16px;">
-                    <h1 style="margin:0; font-size:24px; color:#0f172a;">ÓTICAS AMMO NOVA OLIMPIA</h1>
+                    <h1 style="margin:0; font-size:24px; color:#0f172a;">ÓTICAS AMMO NOVA OLÍMPIA</h1>
                     <p style="margin:4px 0 0; font-size:13px; color:#475569;">ORDEM DE SERVIÇO / RECIBO DE VENDA</p>
                 </div>
 
@@ -1093,12 +1575,151 @@
         document.getElementById('v-acrescimo').value = ""; 
         document.getElementById('v-cred-parcelas').value = "1"; 
         document.getElementById('chk-pag-parcial').checked = false; 
-        document.getElementById('chk-imprimir-recibo').checked = false; 
-        document.getElementById('chk-imprimir-nfce').checked = false; 
         fecharTelaPagamento(); 
         const btn = document.getElementById('btn-confirma-fim'); 
         btn.disabled = false; 
         btn.innerHTML = "<i class='fas fa-check-circle' style='font-size: 20px; margin-bottom: 5px;'></i> Finalizar Venda"; 
+    }
+
+
+    function imprimirComprovantePagamentoBoleto(boleto, forma, valorPago, recebidoPor) {
+        const agora = new Date();
+        const dataHora = agora.toLocaleString('pt-BR');
+        const valor = parseFloat(valorPago || boleto.valor || boleto.valorRecebido || 0) || 0;
+        const parcela = `${boleto.parcela || '-'} / ${boleto.totalParcelas || '-'}`;
+        const vencimento = boleto.vencimentoBR || boleto.vencimento || '-';
+        const idBoleto = boleto.idBoleto || boleto.ID_BOLETO || '-';
+        const idVenda = boleto.idVenda || boleto.ID_VENDA || '-';
+        const cliente = boleto.cliente || boleto.nomeCliente || boleto.CLIENTE || '-';
+        const cpf = boleto.cpf || boleto.CPF || 'Não informado';
+
+        const html = `
+            <div style="font-family: Arial, Helvetica, sans-serif; color:#000; width:70mm; margin:0 auto; padding:8px 4px; font-size:11px;">
+                <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:8px; margin-bottom:8px;">
+                    ${logoEmpresaHTML('42mm', '18mm')}
+                    <div style="font-size:15px; font-weight:900; margin-top:3px;">ÓTICAS AMMO NOVA OLÍMPIA</div>
+                    <div style="font-size:10px; font-weight:700; margin-top:3px;">COMPROVANTE DE PAGAMENTO DE BOLETO</div>
+                    <div style="font-size:9px; margin-top:2px;">Documento gerencial interno</div>
+                </div>
+
+                <div style="border:1px solid #000; padding:7px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; gap:8px;"><strong>Boleto:</strong><span>${escaparHTML(idBoleto)}</span></div>
+                    <div style="display:flex; justify-content:space-between; gap:8px;"><strong>Venda/OS:</strong><span>${escaparHTML(idVenda)}</span></div>
+                    <div style="display:flex; justify-content:space-between; gap:8px;"><strong>Parcela:</strong><span>${escaparHTML(parcela)}</span></div>
+                    <div style="display:flex; justify-content:space-between; gap:8px;"><strong>Vencimento:</strong><span>${escaparHTML(vencimento)}</span></div>
+                </div>
+
+                <div style="border:1px dashed #000; padding:7px; margin-bottom:8px;">
+                    <div><strong>Cliente:</strong> ${escaparHTML(cliente)}</div>
+                    <div><strong>CPF:</strong> ${escaparHTML(cpf)}</div>
+                </div>
+
+                <div style="border:2px solid #000; padding:8px; margin-bottom:8px; text-align:center;">
+                    <div style="font-size:10px; text-transform:uppercase;">Valor recebido</div>
+                    <div style="font-size:24px; font-weight:900; margin-top:3px;">${formatarMoedaBR(valor)}</div>
+                    <div style="font-size:10px; margin-top:4px;">Forma: <strong>${escaparHTML(forma)}</strong></div>
+                </div>
+
+                <div style="font-size:10px; line-height:1.45;">
+                    <div><strong>Recebido por:</strong> ${escaparHTML(recebidoPor || '-')}</div>
+                    <div><strong>Data/Hora:</strong> ${escaparHTML(dataHora)}</div>
+                    <div><strong>Sessão Caixa:</strong> ${escaparHTML(cxSessao || '-')}</div>
+                </div>
+
+                <div style="margin-top:28px; border-top:1px solid #000; text-align:center; padding-top:5px; font-size:10px;">Assinatura do cliente</div>
+                <div style="text-align:center; font-size:9px; margin-top:10px;">Pagamento registrado no caixa do dia.</div>
+            </div>`;
+
+        imprimirHTMLSeguro(html, 'termico');
+    }
+
+
+    async function abrirModalReceberBoletos() {
+        if (!cxSessao) {
+            alert("Caixa Fechado! Abra o caixa para receber boletos.");
+            abrirModalCaixa('abertura');
+            return;
+        }
+        document.getElementById('modal-receber-boletos').style.display = 'flex';
+        await carregarBoletosRecebimento();
+    }
+
+    function normalizarDataBoletoParaComparacao(valor) {
+        if (!valor) return 0;
+        const txt = String(valor).trim();
+        let partes;
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(txt)) {
+            partes = txt.split('/');
+            return parseInt(`${partes[2]}${partes[1]}${partes[0]}`);
+        }
+        if (/^\d{4}-\d{2}-\d{2}/.test(txt)) {
+            return parseInt(txt.substring(0, 10).replace(/-/g, ''));
+        }
+        const d = new Date(txt);
+        if (!isNaN(d.getTime())) {
+            return parseInt(d.toISOString().substring(0, 10).replace(/-/g, ''));
+        }
+        return 0;
+    }
+
+    async function carregarBoletosRecebimento() {
+        const tbody = document.querySelector('#tabela-receber-boletos tbody');
+        const busca = (document.getElementById('busca-boleto-recebimento')?.value || '').toLowerCase().trim();
+        tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando somente boletos vencidos... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+        try {
+            const operador = document.getElementById('vendedor-select').value || document.getElementById('login-user').value || '';
+            const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=boletos_vencidos&acao=boletos_vencidos&data=${dataHojeISO()}&vendedor=${encodeURIComponent(operador)}&nocache=${Date.now()}`);
+            const dados = await res.json();
+            let lista = Array.isArray(dados) ? dados : (dados.boletos || dados.vencidos || []);
+
+            // Segurança extra no front-end: mesmo que o servidor devolva todos, só mostra vencidos até hoje.
+            const hojeNum = parseInt(dataHojeISO().replace(/-/g, ''));
+            lista = lista.filter(b => {
+                const vencimento = b.vencimento || b.vencimentoBR || b.dataVencimento || b.DATA_VENCIMENTO || '';
+                const vencNum = normalizarDataBoletoParaComparacao(vencimento);
+                const status = String(b.status || b.STATUS || 'ABERTO').toUpperCase();
+                const textoBusca = `${b.cliente || ''} ${b.nomeCliente || ''} ${b.cpf || ''} ${b.idVenda || ''} ${b.idBoleto || ''}`.toLowerCase();
+                const bateBusca = !busca || textoBusca.includes(busca);
+                return vencNum > 0 && vencNum <= hojeNum && !status.includes('PAGO') && !status.includes('BAIXADO') && bateBusca;
+            });
+
+            tbody.innerHTML = "";
+            boletosRecebimentoCache = {};
+            if (!lista.length) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:#64748b;'>Nenhum boleto vencido encontrado para cobrança.</td></tr>";
+                return;
+            }
+            lista.forEach(b => {
+                const id = String(b.idBoleto || b.id || b.ID_BOLETO || '');
+                boletosRecebimentoCache[id] = b;
+                const valor = parseFloat(b.valor || b.VALOR || 0) || 0;
+                const vencimento = b.vencimento || b.vencimentoBR || b.dataVencimento || '-';
+                const tr = document.createElement('tr');
+                tr.style.background = '#fee2e2';
+                tr.innerHTML = `<td><b style="color:#991b1b;">${vencimento}</b></td><td><b>${b.cliente || b.nomeCliente || '-'}</b><br><small>${id}</small></td><td>${b.parcela || '-'} / ${b.totalParcelas || '-'}</td><td style="font-weight:800; color:var(--danger);">${formatarMoedaBR(valor)}</td><td><span class="badge" style="background:#fecaca;color:#991b1b;">VENCIDO</span></td><td><button onclick="baixarBoletoCaixa('${id.replace(/'/g, "\\'")}', ${valor})" style="background:var(--green-btn); color:white; border:none; border-radius:var(--radius-md); padding:8px 10px; font-weight:700; cursor:pointer;">Receber</button></td>`;
+                tbody.appendChild(tr);
+            });
+        } catch(e) {
+            tbody.innerHTML = "<tr><td colspan='6' style='color:var(--danger); text-align:center;'>Erro ao buscar boletos vencidos.</td></tr>";
+        }
+    }
+
+    async function baixarBoletoCaixa(idBoleto, valor) {
+        const forma = prompt('Forma de recebimento do boleto (Dinheiro, PIX, Débito, Crédito):', 'PIX');
+        if (!forma) return;
+        const recebidoPor = document.getElementById('vendedor-select').value || document.getElementById('login-user').value;
+        try {
+            const boleto = boletosRecebimentoCache[String(idBoleto)] || { idBoleto, valor };
+            const res = await enviarDadosServidor({ tipo: 'baixar_boleto', acao: 'baixar_boleto', idBoleto, valorRecebido: valor, formaBaixa: forma, recebidoPor, vendedor: recebidoPor, idSessaoCaixa: cxSessao });
+            const dados = await res.json();
+            if (!dados.sucesso && dados.status !== 'sucesso') throw new Error(dados.mensagem || 'Falha na baixa');
+            imprimirComprovantePagamentoBoleto(boleto, forma, valor, recebidoPor);
+            alert('Boleto recebido com sucesso e lançado no caixa de hoje. O comprovante de pagamento foi enviado para impressão.');
+            await carregarBoletosRecebimento();
+            await verificarBoletosVencidos(false);
+        } catch(e) {
+            alert('Erro ao baixar boleto: ' + e.message);
+        }
     }
 
     async function verificarTipoVenda(valor) { 
@@ -1112,13 +1733,13 @@
         if (valor === 'parcial') {
             document.getElementById('modal-parciais').style.display = 'flex'; 
             const tbody = document.querySelector('#tabela-parciais tbody'); 
-            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
+            tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando dívidas... <i class='fas fa-spinner fa-spin'></i></td></tr>";
             try {
                 const res = await fetch(`${URL_BASE_2_PRINCIPAL}?tipo=buscarParciais&nocache=${Date.now()}`); 
                 const dados = await res.json(); 
                 tbody.innerHTML = "";
                 if(!Array.isArray(dados) || dados.length === 0) { 
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; 
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color: #64748b;'>Nenhuma dívida pendente.</td></tr>"; 
                     return; 
                 }
                 dados.forEach(p => {
@@ -1126,7 +1747,10 @@
                     tr.className = "linha-pendente"; 
                     const totalF = tratarValor(p.total); 
                     const saldoF = tratarValor(p.saldo);
-                    tr.innerHTML = `<td>${p.data||"-"}</td><td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="font-weight:600;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="color:var(--danger); font-weight:700;">R$ ${saldoF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td>`;
+                    const statusP = String(p.status || 'Pendente');
+                    const isBoleto = statusP.toUpperCase().includes('BOLETO') || String(p.cliente || '').toUpperCase().includes('BOLETO');
+                    tr.style.background = isBoleto ? '#fee2e2' : '#dbeafe';
+                    tr.innerHTML = `<td>${p.data||"-"}</td><td><b style="color:var(--dark-sidebar);">${p.cliente||"-"}</b></td><td>${p.vendedor||"-"}</td><td style="font-weight:600;">R$ ${totalF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td style="color:var(--danger); font-weight:700;">R$ ${saldoF.toLocaleString('pt-br', {minimumFractionDigits: 2})}</td><td><span class="badge" style="background:${isBoleto ? '#fecaca' : '#bfdbfe'}; color:${isBoleto ? '#991b1b' : '#1e3a8a'};">${statusP}</span></td>`;
                     tr.ondblclick = () => { 
                         const idBaixa = p.idVenda || p.idOriginal || p.id || p.numero || "DESCONHECIDO"; 
                         carrinho = [{ nome: "PGTO SALDO PARCIAL - " + p.cliente, valor: saldoF, total: saldoF, qtd: 1, idOriginal: idBaixa }]; 
@@ -1139,7 +1763,7 @@
                     tbody.appendChild(tr);
                 });
             } catch (e) { 
-                tbody.innerHTML = "<tr><td colspan='5' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; 
+                tbody.innerHTML = "<tr><td colspan='6' style='color:var(--danger); text-align:center;'>Erro ao comunicar com o servidor.</td></tr>"; 
             }
         }
 
@@ -1273,8 +1897,9 @@
         
         let totalPago = 0; 
         document.querySelectorAll('.in-pag').forEach(inp => { 
-            totalPago += (parseFloat(inp.value) || 0); 
+            if (inp.id !== 'v-out-boleto') totalPago += (parseFloat(inp.value) || 0); 
         }); 
+        const valorBoletoCalc = parseFloat(document.getElementById('v-out-boleto')?.value) || 0;
         
         let falta = totalVendaFinal - totalPago; 
         let troco = 0; 
@@ -1307,30 +1932,72 @@
             { id: 'v-deb-visa', nome: 'Débito Visa' }, { id: 'v-cred-master', nome: 'Crédito Master' }, 
             { id: 'v-cred-visa', nome: 'Crédito Visa' }, { id: 'v-cred-outros', nome: 'Crédito Elo/Outros' }, 
             { id: 'v-out-din', nome: 'Dinheiro' }, { id: 'v-out-pix', nome: 'PIX' }, 
-            { id: 'v-out-boleto', nome: 'Boleto' }, { id: 'v-out-bonuscred', nome: 'Bonuscred' }, 
-            { id: 'v-out-cred', nome: 'Crediário' } 
+            { id: 'v-out-boleto', nome: 'Boleto' }, { id: 'v-out-bonuscred', nome: 'Bonuscred' }
         ];
         
+        let metodosDetalhados = [];
         camposPagamento.forEach(campo => { 
-            const val = parseFloat(document.getElementById(campo.id).value) || 0; 
+            const elCampo = document.getElementById(campo.id);
+            const val = elCampo ? (parseFloat(elCampo.value) || 0) : 0; 
             if(val > 0) { 
                 totalPago += val; 
                 metodosUsados.push(campo.nome); 
+                metodosDetalhados.push({ nome: campo.nome, valor: val });
             } 
         });
+
+        const valorBoleto = parseFloat(document.getElementById('v-out-boleto').value) || 0;
+        const parcelasBoleto = Math.min(Math.max(parseInt(document.getElementById('v-boleto-parcelas').value) || 1, 1), 6);
+        const diaVencimentoBoleto = parseInt(document.getElementById('v-boleto-dia-vencimento')?.value || 0);
+        const valorPagoDia = Math.max(0, totalPago - valorBoleto);
+        const vendaComBoleto = valorBoleto > 0;
+        if (valorBoleto > 0) {
+            if (![1, 7, 15].includes(diaVencimentoBoleto)) {
+                return alert('Antes de gerar o carnê, escolha a data de vencimento do boleto: dia 1, dia 7 ou dia 15.');
+            }
+            metodosUsados = metodosUsados.map(m => m === 'Boleto' ? `Boleto ${parcelasBoleto}x - venc. dia ${diaVencimentoBoleto}` : m);
+            metodosDetalhados = metodosDetalhados.map(m => m.nome === 'Boleto' ? { nome: `Boleto ${parcelasBoleto}x - venc. dia ${diaVencimentoBoleto}`, valor: m.valor } : m);
+        }
         
         const isParcialPermitido = document.getElementById('chk-pag-parcial').checked; 
         const emitirNF = document.getElementById('chk-imprimir-nfce').checked; 
         const imprimirA4 = document.getElementById('chk-imprimir-recibo').checked;
         
-        if (totalPago === 0 && !isParcialPermitido) { 
+        if (totalPago === 0 && !isParcialPermitido && !vendaComBoleto) { 
             return alert("Insira o valor nos campos de pagamento para prosseguir."); 
         } 
         
-        let falta = totalVendaFinal - totalPago; 
+        let falta = totalVendaFinal - valorPagoDia; 
         
-        if (falta > 0.01 && !isParcialPermitido) { 
+        if (falta > 0.01 && !isParcialPermitido && !vendaComBoleto) { 
             return alert(`Falta pagar R$ ${falta.toLocaleString('pt-br', {minimumFractionDigits: 2})}. Marque a opção 'Pagamento parcial' se quiser gerar a dívida.`); 
+        }
+
+        if (vendaComBoleto && Math.abs(valorBoleto - falta) > 0.01) {
+            return alert(`O valor em boleto precisa ser igual ao saldo que ficará em aberto.
+
+Saldo em aberto: ${formatarMoedaBR(falta)}
+Valor informado em boleto: ${formatarMoedaBR(valorBoleto)}`);
+        }
+
+        // TRAVA DE BOLETO: exige entrada mínima de 50% do valor total da venda.
+        // A entrada é calculada somente com o pagamento realizado no dia, sem contar o valor lançado em boleto.
+        if (vendaComBoleto) {
+            const entradaMinimaBoleto = totalVendaFinal * 0.50;
+            if (valorPagoDia + 0.01 < entradaMinimaBoleto && !liberacaoBoletoEntrada) {
+                motivoBloqueioAtual = 'boleto_entrada';
+                document.getElementById('msg-auth-master').innerHTML = `
+                    <b>Liberação Master necessária</b><br><br>
+                    Para confeccionar boleto é exigida entrada mínima de 50%.<br>
+                    Total da venda: <b>${formatarMoedaBR(totalVendaFinal)}</b><br>
+                    Entrada informada: <b>${formatarMoedaBR(valorPagoDia)}</b><br>
+                    Mínimo exigido: <b>${formatarMoedaBR(entradaMinimaBoleto)}</b><br><br>
+                    Digite a senha Master para autorizar.
+                `;
+                document.getElementById('senha-master').value = '';
+                document.getElementById('modal-auth-master').style.display = 'flex';
+                return;
+            }
         }
         
         const parcelasNum = document.getElementById('v-cred-parcelas').value; 
@@ -1360,15 +2027,31 @@
             subtotal: subtotal, 
             desconto: desconto, 
             acrescimo: acrescimo, 
-            valorTotal: totalVendaFinal, 
-            valorPago: totalPago, 
-            saldoDevedor: (isParcialPermitido && falta > 0) ? falta : 0, 
+            valorTotal: vendaComBoleto ? valorPagoDia : totalVendaFinal, 
+            valorTotalOriginal: totalVendaFinal,
+            valorPago: valorPagoDia,
+            valorPagoDia: valorPagoDia,
+            saldoDevedor: ((isParcialPermitido || vendaComBoleto) && falta > 0) ? falta : 0, 
             formaPagamento: stringPagamento, 
-            condicao: (isParcialPermitido && falta > 0) ? "Parcial" : "A Vista", 
-            parcelas: parcelasNum + "x", 
+            condicao: vendaComBoleto ? "Boleto / Parcial" : ((isParcialPermitido && falta > 0) ? "Parcial" : "A Vista"), 
+            parcelas: valorBoleto > 0 ? (parcelasBoleto + "x boleto") : (parcelasNum + "x"), 
+            parcelasBoleto: parcelasBoleto,
+            valorBoleto: valorBoleto,
+            diaVencimentoBoleto: vendaComBoleto ? diaVencimentoBoleto : '',
+            vencimentoBoletoEscolhido: vendaComBoleto ? `Dia ${diaVencimentoBoleto}` : '',
             idVenda: "AMMO-" + Date.now(), 
-            emitirNotaFiscal: emitirNF 
+            emitirNotaFiscal: emitirNF,
+            boletoEntradaMinima50: vendaComBoleto ? (totalVendaFinal * 0.50) : 0,
+            boletoEntradaInformada: valorPagoDia,
+            boletoLiberadoMaster: vendaComBoleto && liberacaoBoletoEntrada,
+            boletoAutorizadorMaster: vendaComBoleto && liberacaoBoletoEntrada ? adminAutorizador : '',
+            boletoMotivoLiberacao: vendaComBoleto && liberacaoBoletoEntrada ? motivoLiberacaoBoleto : ''
         };
+
+        const boletosGerados = valorBoleto > 0 ? gerarBoletosVenda(payload, valorBoleto, parcelasBoleto, diaVencimentoBoleto) : [];
+        if (valorBoleto > 0 && boletosGerados.length === 0) return;
+        payload.boletosGerados = boletosGerados;
+        payload.temBoletos = boletosGerados.length > 0;
         
         const btn = document.getElementById('btn-confirma-fim'); 
         btn.disabled = true; 
@@ -1378,7 +2061,14 @@
             payload.arquivoPdfBase64 = await gerarArquivoPdfBase64OS(payload);
             if (imprimirA4) { imprimirReciboA4(payload); }
 
-            const resposta = await enviarDadosServidor(payload); 
+            // Comprovante de pagamento e carnê do boleto
+            imprimirComprovantePagamento(payload, metodosDetalhados);
+            if (valorBoleto > 0) {
+                setTimeout(() => imprimirCarneBoleto(payload, valorBoleto, parcelasBoleto, boletosGerados), 700);
+            }
+
+            const resposta = await enviarDadosServidor(payload);
+            // Os boletos já são enviados dentro do payload da venda. Não chamamos registrar_boletos separado para não duplicar.
             const dadosResposta = await resposta.json();
             
             if(emitirNF) { 
@@ -1400,6 +2090,8 @@
                 alert("Operação registrada no servidor com sucesso!"); 
             } 
             
+            liberacaoBoletoEntrada = false;
+            motivoLiberacaoBoleto = '';
             setTimeout(() => { resetarPDV(); }, 1500);
         } catch (erro) { 
             console.error(erro); 
@@ -1661,6 +2353,28 @@ if (!arquivoTexto.startsWith("data:application/pdf")) {
         btn.innerHTML = textoOriginal;
         btn.disabled = false;
     }
+
+    // Restaura o acesso se o operador fechou a aba por acidente no mesmo dia.
+    document.addEventListener('DOMContentLoaded', async function() {
+        const loginSalvo = obterLoginLocal();
+        if (!loginSalvo) return;
+        try {
+            document.getElementById('tela-login').style.display = 'none';
+            document.getElementById('tela-loading').style.display = 'flex';
+            document.getElementById('login-user').value = loginSalvo.nome;
+            await carregarDados();
+            const sel = document.getElementById('vendedor-select');
+            if (sel && loginSalvo.nome) sel.value = loginSalvo.nome;
+            const caixaRestaurado = restaurarCaixaLocalSeExistir();
+            document.getElementById('tela-loading').style.display = 'none';
+            if (caixaRestaurado) setTimeout(verificarBoletosVencidos, 600);
+        } catch(e) {
+            document.getElementById('tela-loading').style.display = 'none';
+            document.getElementById('tela-login').style.display = 'flex';
+        }
+    });
+
+    setInterval(() => { if (cxSessao) verificarBoletosVencidos(false); }, 5 * 60 * 1000);
 </script>
 </body>
 </html>
